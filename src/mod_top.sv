@@ -7,8 +7,8 @@ module mod_top (
     input  wire clock_btn,          // 左侧微动开关，推荐作为手动时钟，带消抖电路，按下时为 1
     input  wire reset_btn,          // 右侧微动开关，推荐作为手动复位，带消抖电路，按下时为 1
     input  wire [3:0]  touch_btn,   // 四个按钮开关，按下时为 0
-    input  wire [31:0] dip_sw,      // 16 位拨码开关，拨到 “ON” 时为 0
-    output wire [15:0] leds,        // 32 位 LED 灯，输出 1 时点亮
+    input  wire [15:0] dip_sw,      // 16 位拨码开关，拨到 “ON” 时为 0
+    output wire [31:0] leds,        // 32 位 LED 灯，输出 1 时点亮
     output wire [7: 0] dpy_digit,   // 七段数码管笔段信号
     output wire [7: 0] dpy_segment, // 七段数码管位扫描信号
 
@@ -94,7 +94,7 @@ ip_pll u_ip_pll(
 // 七段数码管扫描演示
 reg [31: 0] number;
 dpy_scan u_dpy_scan (
-    .clk     (clk         ),
+    .clk     (clk_in      ),
     .number  (number      ),
     .dp      (7'b0        ),
     .digit   (dpy_digit   ),
@@ -103,13 +103,22 @@ dpy_scan u_dpy_scan (
 
 // 自增计数器，用于数码管演示
 reg [31: 0] counter;
-always @(posedge clk) begin
-    counter <= counter + 32'b1;
-    if (counter == 5_000_000) begin
-        counter <= 32'b0;
-        number <= number + 32'b1;
-    end
+always @(posedge clk_in or posedge reset_btn) begin
+    if (reset_btn) begin
+	     counter <= 32'b0;
+		  number <= 32'b0;
+	 end else begin
+        counter <= counter + 32'b1;
+        if (counter == 32'd5_000_000) begin
+            counter <= 32'b0;
+            number <= number + 32'b1;
+        end
+	 end
 end
+
+// LED
+assign leds[15:0] = number[15:0];
+assign leds[31:16] = ~(dip_sw);
 
 // 图像输出演示，分辨率 800x600@75Hz，像素时钟为 50MHz，显示渐变色彩条
 wire [11:0] hdata;  // 当前横坐标
@@ -119,7 +128,7 @@ wire [11:0] vdata;  // 当前纵坐标
 // 警告：该图像生成方式仅供演示，请勿使用横纵坐标驱动大量逻辑！！
 assign video_red = vdata < 200 ? hdata[8:1] : 0;
 assign video_green = vdata >= 200 && vdata < 400 ? hdata[8:1] : 0;
-assign video_blue = vdata > 400 ? hdata[8:1] : 0;
+assign video_blue = vdata >= 400 ? hdata[8:1] : 0;
 
 assign video_clk = clk_vga;
 vga #(12, 800, 856, 976, 1040, 600, 637, 643, 666, 1, 1) vga800x600at75 (
