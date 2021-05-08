@@ -283,20 +283,20 @@ set_location_assignment PIN_R25 -to rs232_txd
 
 # SD Card
 set_location_assignment PIN_U25 -to sd_wp
-set_location_assignment PIN_U24 -to sd_cd
+set_location_assignment PIN_V25 -to sd_cd
 
 # Choose one of the two interfaces below
 # (SPI Mode)
-set_location_assignment PIN_V25 -to sd_sclk
+set_location_assignment PIN_V23 -to sd_sclk
 set_location_assignment PIN_V22 -to sd_mosi
-set_location_assignment PIN_V23 -to sd_miso
+set_location_assignment PIN_V24 -to sd_miso
 set_location_assignment PIN_W22 -to sd_cs
 
 # (SD Mode)
-# set_location_assignment PIN_V25 -to sd_clk
+# set_location_assignment PIN_V23 -to sd_clk
 # set_location_assignment PIN_V22 -to sd_cmd
-# set_location_assignment PIN_V23 -to sd_data[0]
-# set_location_assignment PIN_V24 -to sd_data[1]
+# set_location_assignment PIN_V24 -to sd_data[0]
+# set_location_assignment PIN_U24 -to sd_data[1]
 # set_location_assignment PIN_Y22 -to sd_data[2]
 # set_location_assignment PIN_W22 -to sd_data[3]
 
