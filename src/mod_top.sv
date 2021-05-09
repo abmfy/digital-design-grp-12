@@ -58,7 +58,7 @@ module mod_top (
     // output wire        sdram_ce_n,
     // output wire        sdram_cke,
     // output wire        sdram_clk,
-    // output wire [15:0] sdram_dq,
+    // inout wire [15:0] sdram_dq,
     // output wire        sdram_dqmh,
     // output wire        sdram_dqml,
     // output wire        sdram_ras_n,
