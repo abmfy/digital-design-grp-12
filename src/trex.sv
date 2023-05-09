@@ -75,42 +75,15 @@ module trex (
         end else begin
             state <= next_state;
 
-            case (state)
-                WAITING: begin
-                    frame <= timer >= 30 ? WAITING0 : WAITING1;
-                end
-                RUNNING: begin
-                    frame <= inside_range(timer, 0, 5) ||
-                        inside_range(timer, 10, 15) ||
-                        inside_range(timer, 20, 25) ||
-                        inside_range(timer, 30, 35) ||
-                        inside_range(timer, 40, 45) ||
-                        inside_range(timer, 50, 55)
-                    ? RUNNING0 : RUNNING1;
-                end
-                JUMPING: begin
-                    frame <= JUMPING0;
-                end
-                DUCKING: begin
-                    frame <= inside_range(timer, 0, 10) ||
-                        inside_range(timer, 20, 30) ||
-                        inside_range(timer, 40, 50)
-                    ? DUCKING0 : RUNNING1;
-                end
-                CRASHED: begin
-                    frame <= CRASHED0;
-                end
-            endcase
+            update_frame();
 
-            case (next_state)
-                JUMPING: begin
-                    if (state == RUNNING) begin
-                        start_jump(speed);
-                    end else if (state == JUMPING) begin
-                        update_jump();
-                    end
+            if (next_state == JUMPING) begin
+                if (state == RUNNING) begin
+                    start_jump(speed);
+                end else if (state == JUMPING) begin
+                    update_jump();
                 end
-            endcase
+            end
         end
     end
 
@@ -153,6 +126,36 @@ module trex (
         y_pos <= GROUND_Y_POS;
         jump_velocity <= 0;
         gravity_counter <= 0;
+    endtask
+
+    // Update frame to render based on the next state.
+    task update_frame;
+        case (next_state)
+            WAITING: begin
+                frame <= timer >= 30 ? WAITING0 : WAITING1;
+            end
+            RUNNING: begin
+                frame <= inside_range(timer, 0, 5) ||
+                    inside_range(timer, 10, 15) ||
+                    inside_range(timer, 20, 25) ||
+                    inside_range(timer, 30, 35) ||
+                    inside_range(timer, 40, 45) ||
+                    inside_range(timer, 50, 55)
+                ? RUNNING0 : RUNNING1;
+            end
+            JUMPING: begin
+                frame <= JUMPING0;
+            end
+            DUCKING: begin
+                frame <= inside_range(timer, 0, 10) ||
+                    inside_range(timer, 20, 30) ||
+                    inside_range(timer, 40, 50)
+                ? DUCKING0 : RUNNING1;
+            end
+            CRASHED: begin
+                frame <= CRASHED0;
+            end
+        endcase
     endtask
 
     // Initialize a jump.
