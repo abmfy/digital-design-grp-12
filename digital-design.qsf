@@ -48,9 +48,9 @@ set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
 set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
 set_global_assignment -name NOMINAL_CORE_SUPPLY_VOLTAGE 1.2V
-set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (Verilog)"
+set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (SystemVerilog)"
 set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
-set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation
+set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "SYSTEMVERILOG HDL" -section_id eda_simulation
 set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_timing
 set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_symbol
 set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_signal_integrity
@@ -70,15 +70,30 @@ set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS_WEAK_PULLUP "AS INPUT TRI-STATED"
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+set_global_assignment -name EDA_TEST_BENCH_ENABLE_STATUS TEST_BENCH_MODE -section_id eda_simulation
+set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH sensor_sim -section_id eda_simulation
+set_global_assignment -name EDA_TEST_BENCH_NAME async_receiver_sim -section_id eda_simulation
+set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id async_receiver_sim
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME async_receiver_sim -section_id async_receiver_sim
+set_global_assignment -name SYSTEMVERILOG_FILE src/sensor_sim.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/sensor.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/spike_filter.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/cross_domain.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver_sim.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver.sv
 set_global_assignment -name QIP_FILE ip/pll/ip_pll.qip
 set_global_assignment -name VERILOG_FILE src/dpy_scan.v
 set_global_assignment -name VERILOG_FILE src/vga.v
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE io.tcl
 set_global_assignment -name SYSTEMVERILOG_FILE src/mod_top.sv
-set_global_assignment -name RESERVE_ALL_UNUSED_PINS_WEAK_PULLUP "AS INPUT TRI-STATED"
-set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVCMOS"
-set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
-set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
-set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
-set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+set_global_assignment -name EDA_TEST_BENCH_NAME sensor_sim -section_id eda_simulation
+set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id sensor_sim
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME sensor_sim -section_id sensor_sim
+set_global_assignment -name EDA_TEST_BENCH_FILE src/async_receiver_sim.sv -section_id async_receiver_sim
+set_global_assignment -name EDA_TEST_BENCH_FILE src/sensor_sim.sv -section_id sensor_sim
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
