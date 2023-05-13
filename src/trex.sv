@@ -19,7 +19,7 @@ package trex_pkg;
     parameter FPS = 60;
     parameter CLK_PER_FRAME = CLK_FREQ / FPS;
 
-    parameter DROP_VELOCITY = -5;
+    parameter signed DROP_VELOCITY = -5;
     parameter HEIGHT = 47;
     parameter HEIGHT_DUCK  = 25;
     parameter START_X_POS = 50;
@@ -28,7 +28,7 @@ package trex_pkg;
 
     parameter GRAVITY = 6;
     parameter MAX_JUMP_HEIGHT = 30;
-    parameter INITIAL_JUMP_VELOCITY = -10;
+    parameter signed INITIAL_JUMP_VELOCITY = -9;
 
     // Position when on the ground.
     parameter GROUND_Y_POS = 150 - HEIGHT - 10;
@@ -52,7 +52,7 @@ module trex (
     output reg[9:0] x_pos,
     output reg[9:0] y_pos,
 
-    output frame_t frame
+    output logic[2:0] frame
 );
     import trex_pkg::*;
 
@@ -78,7 +78,7 @@ module trex (
             update_frame();
 
             if (next_state == JUMPING) begin
-                if (state == RUNNING) begin
+                if (state == WAITING || state == RUNNING) begin
                     start_jump(speed);
                 end else if (state == JUMPING) begin
                     update_jump();
@@ -186,6 +186,11 @@ module trex (
 
         // Minimum height has been reached.
         if (y_pos < MIN_JUMP_HEIGHT) begin
+            reached_min_height = 1;
+        end
+
+        // Reached max height.
+        if (y_pos < MAX_JUMP_HEIGHT) begin
             end_jump();
         end
 
