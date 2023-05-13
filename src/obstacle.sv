@@ -1,3 +1,4 @@
+import runner_pkg::GAME_WIDTH;
 import util_func::*;
 
 package obstacle_pkg;
@@ -64,8 +65,6 @@ package obstacle_pkg;
         CACTUS_LARGE: 0,
         PTERODACTYL: 2
     };
-
-    parameter DEFAULT_DIMENSIONS_WIDTH = 150;
 
     parameter MAX_OBSTACLE_LENGTH = 3;
 
@@ -180,7 +179,7 @@ module obstacle (
 
         height <= HEIGHT[typ];
         width <= get_width();
-        x_pos<= DEFAULT_DIMENSIONS_WIDTH;
+        x_pos<= GAME_WIDTH;
         y_pos <= Y_POS[typ][timer < 20 ? 0 : timer < 40 ? 1 : 2];
 
         // For obstacles that go at a different speed from the horizon.
