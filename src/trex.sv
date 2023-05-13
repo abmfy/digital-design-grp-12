@@ -15,10 +15,6 @@ package trex_pkg;
         CRASHED
     } state_t;
 
-    parameter CLK_FREQ = 100_000_000;
-    parameter FPS = 60;
-    parameter CLK_PER_FRAME = CLK_FREQ / FPS;
-
     parameter signed DROP_VELOCITY = -5;
     parameter HEIGHT = 47;
     parameter HEIGHT_DUCK  = 25;
@@ -39,18 +35,18 @@ endpackage
 
 // T-rex game character.
 module trex (
-    input wire clk,
-    input wire rst,
+    input clk,
+    input rst,
 
-    input wire[5:0] timer,
+    input[5:0] timer,
 
-    input wire[3:0] speed,
+    input[3:0] speed,
 
-    input wire jump,
-    input wire crash,
+    input jump,
+    input crash,
 
-    output reg[9:0] x_pos,
-    output reg[9:0] y_pos,
+    output logic[9:0] x_pos,
+    output logic[9:0] y_pos,
 
     output logic[2:0] frame
 );
@@ -117,9 +113,9 @@ module trex (
         end
     end
 
-    function logic inside_range(logic[5:0] x, logic[5:0] a, logic[5:0] b);
-        return a <= x && x < b;
-    endfunction
+    // function logic inside_range(logic[5:0] x, logic[5:0] a, logic[5:0] b);
+    //     return a <= x && x < b;
+    // endfunction
 
     task reset;
         x_pos <= START_X_POS;
