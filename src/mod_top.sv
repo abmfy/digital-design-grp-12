@@ -87,6 +87,7 @@ module mod_top (
 );
   wire [15:0] acceleration;
   wire [15:0] direction;
+
   sensor sensor_inst (
       .clk(clk_100m),
       .rst(reset_btn),
@@ -104,4 +105,17 @@ module mod_top (
       .digit  (dpy_digit),
       .segment(dpy_segment)
   );
+
+  wire jumping;
+  wire ducking;
+
+  motion_detector motion_detector_inst (
+      .acceleration(acceleration),
+      .direction(direction),
+      .jumping(jumping),
+      .ducking(ducking)
+  );
+
+  assign leds[15] = jumping;
+  assign leds[0] = ducking;
 endmodule
