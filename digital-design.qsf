@@ -39,7 +39,7 @@
 
 set_global_assignment -name FAMILY "Cyclone IV E"
 set_global_assignment -name DEVICE EP4CE115F29I7
-set_global_assignment -name TOP_LEVEL_ENTITY mod_top
+set_global_assignment -name TOP_LEVEL_ENTITY horizon
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 20.1.1
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "20:54:08  APRIL 12, 2021"
 set_global_assignment -name LAST_QUARTUS_VERSION "19.1.0 Lite Edition"
@@ -78,12 +78,12 @@ set_global_assignment -name EDA_TEST_BENCH_NAME trex_sim.sv -section_id eda_simu
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id trex_sim.sv
 set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME trex_sim -section_id trex_sim.sv
 set_global_assignment -name EDA_TEST_BENCH_FILE src/sim/trex_sim.sv -section_id trex_sim.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/runner.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/horizon.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/util/util_func.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/util/lfsr_prng.sv
 set_global_assignment -name VERILOG_FILE src/util/lfsr.v
-set_global_assignment -name SYSTEMVERILOG_FILE src/sim/obstacle_sim.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/obstacle.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/sim/trex_sim.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/trex.sv
 set_global_assignment -name QIP_FILE ip/pll/ip_pll.qip
 set_global_assignment -name VERILOG_FILE src/dpy_scan.v

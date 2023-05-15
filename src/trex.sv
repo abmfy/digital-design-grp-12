@@ -40,7 +40,7 @@ module trex (
 
     input[5:0] timer,
 
-    input[3:0] speed,
+    input[4:0] speed,
 
     input jump,
     input crash,

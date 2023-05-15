@@ -40,7 +40,7 @@ module distance_meter(
 
     input timer_pulse,
 
-    input[3:0] speed,
+    input[4:0] speed,
 
     output logic[3:0] digits[MAX_DISTANCE_UNITS],
     output logic paint

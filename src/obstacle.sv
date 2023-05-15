@@ -1,18 +1,17 @@
-import runner_pkg::GAME_WIDTH;
-import util_func::*;
-
 package obstacle_pkg;
     typedef enum logic[2:0] {
+        NONE,
         CACTUS_SMALL,
         CACTUS_LARGE,
         PTERODACTYL
     } type_t;
 
     typedef enum logic[2:0] {
-        CACTUS_SMALL0,
-        CACTUS_LARGE0,
-        PTERODACTYL0,
-        PTERODACTYL1
+        NONE_0,
+        CACTUS_SMALL_0,
+        CACTUS_LARGE_0,
+        PTERODACTYL_0,
+        PTERODACTYL_1
     } frame_t;
 
     typedef enum logic[1:0] {
@@ -21,46 +20,54 @@ package obstacle_pkg;
         CRASHED
     } state_t;
 
-    parameter TYPE_COUNT = 3;
+    parameter TYPE_COUNT = 4;
     parameter Y_POS_COUNT = 3;
 
     parameter int WIDTH[TYPE_COUNT] = '{
+        NONE: 0,
         CACTUS_SMALL: 17,
         CACTUS_LARGE: 25,
         PTERODACTYL: 46
     };
 
     parameter int HEIGHT[TYPE_COUNT] = '{
+        NONE: 0,
         CACTUS_SMALL: 35,
         CACTUS_LARGE: 50,
         PTERODACTYL: 40
     };
     parameter int Y_POS[TYPE_COUNT][Y_POS_COUNT] = '{
+        NONE: '{0, 0, 0},
         CACTUS_SMALL: '{105, 105, 105},
         CACTUS_LARGE: '{90, 90, 90},
         PTERODACTYL: '{100, 75, 50}
     };
     parameter int MULTIPLE_SPEED[TYPE_COUNT] = '{
+        NONE: 0,
         CACTUS_SMALL: 4,
         CACTUS_LARGE: 7,
         PTERODACTYL: 999
     };
     parameter int MIN_GAP[TYPE_COUNT] = '{
+        NONE: 0,
         CACTUS_SMALL: 120,
         CACTUS_LARGE: 120,
         PTERODACTYL: 150
     };
     parameter int MIN_SPEED[TYPE_COUNT] = '{
+        NONE: 0,
         CACTUS_SMALL: 0,
         CACTUS_LARGE: 0,
         PTERODACTYL: 8
     };
     parameter int signed SPEED_OFFSET[TYPE_COUNT] = '{
+        NONE: 0,
         CACTUS_SMALL: 0,
         CACTUS_LARGE: 0,
         PTERODACTYL: 1
     };
     parameter int NUM_FRAMES[TYPE_COUNT] = '{
+        NONE: 0,
         CACTUS_SMALL: 0,
         CACTUS_LARGE: 0,
         PTERODACTYL: 2
@@ -72,55 +79,43 @@ package obstacle_pkg;
     
 endpackage
 
-import obstacle_pkg::*;
-
 module obstacle (
     input clk,
     input rst,
 
+    input update,
     input[5:0] timer,
+    input[4:0] speed,
 
-    input type_t typ,
+    input obstacle_pkg::type_t typ,
     input start,
     input crash,
 
-    input[1:0] size,
+    input logic[10:0] rng_data,
 
-    input[3:0] speed,
+    output logic remove,
+    output logic[10:0] gap,
+    output logic visible,
 
-    output logic signed[9:0] x_pos,
+    output logic signed[10:0] x_pos,
     output logic[9:0] y_pos,
     output logic[9:0] width,
     output logic[9:0] height,
 
-    output logic[11:0] sprite_x_pos,
-    output logic[11:0] sprite_y_pos  
+    output obstacle_pkg::frame_t frame
 );  
+    import obstacle_pkg::*;
+
+    import runner_pkg::GAME_WIDTH;
+    import util_func::*;
+
     state_t state, next_state;
 
-    logic remove;
-
-    logic[1:0] current_size;
+    logic[1:0] size;
 
     logic signed[1:0] speed_offset;
 
-    logic[10:0] gap;
-
-    frame_t frame;
-
-    logic rng_load;
-    logic[10:0] rng_data;
-    lfsr_prng #(
-        .DATA_WIDTH(11),
-        .INVERT(0)
-    ) prng_gap (
-        .clk(clk),
-        .load(rng_load),
-        .seed(RANDOM_SEED),
-
-        .enable(1),
-        .data_out(rng_data)
-    );
+    assign visible = x_pos + $signed(width) > 0;
 
     always_ff @(posedge clk) begin
         if (rst) begin
@@ -129,20 +124,13 @@ module obstacle (
             width <= 0;
             height <= 0;
 
-            sprite_x_pos <= 0;
-            sprite_y_pos <= 0;
-
             remove <= 0;
-            current_size <= 0;
+            size <= 0;
             speed_offset <= 0;
             gap <= 0;
-            frame <= CACTUS_SMALL0;
-
-            rng_load <= 1;
-        end else begin
+            frame <= NONE_0;
+        end else if (update) begin
             state <= next_state;
-
-            rng_load <= 0;
 
             if (next_state == RUNNING) begin
                 if (state == WAITING) begin
@@ -175,7 +163,7 @@ module obstacle (
         remove <= 0;
 
         // Only allow sizing if we're at the right speed.
-        current_size <= get_size();
+        size <= get_size();
 
         height <= HEIGHT[typ];
         width <= get_width();
@@ -189,16 +177,16 @@ module obstacle (
 
         case (typ)
             CACTUS_SMALL: begin
-                frame <= CACTUS_SMALL0;
+                frame <= CACTUS_SMALL_0;
             end
             CACTUS_LARGE: begin
-                frame <= CACTUS_LARGE0;
+                frame <= CACTUS_LARGE_0;
             end
             PTERODACTYL: begin
-                frame <= PTERODACTYL0;
+                frame <= PTERODACTYL_0;
             end
             default: begin
-                frame <= CACTUS_SMALL0;
+                frame <= NONE_0;
             end
         endcase
 
@@ -212,21 +200,19 @@ module obstacle (
                 frame <= inside_range(timer, 0, 10) ||
                     inside_range(timer, 20, 30) ||
                     inside_range(timer, 40, 50)
-                ? PTERODACTYL0 : PTERODACTYL1;
+                ? PTERODACTYL_0 : PTERODACTYL_1;
             end
         end
 
-        if (!is_visible()) begin
+        if (!visible) begin
             remove <= 1;
         end
     endtask
 
-    function logic is_visible;
-        return x_pos + $signed(width) > 0;
-    endfunction
-
     function logic[1:0] get_size;
-        return speed > MULTIPLE_SPEED[typ] ? size : 1;
+        return speed > MULTIPLE_SPEED[typ]
+            ? rng_data % MAX_OBSTACLE_LENGTH
+            : 1;
     endfunction
 
     function logic[9:0] get_width;
