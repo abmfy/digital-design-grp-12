@@ -24,7 +24,7 @@ package trex_pkg;
 
     parameter GRAVITY = 6;
     parameter MAX_JUMP_HEIGHT = 30;
-    parameter signed INITIAL_JUMP_VELOCITY = -9;
+    parameter signed INITIAL_JUMP_VELOCITY = -10;
 
     // Position when on the ground.
     parameter GROUND_Y_POS = 150 - HEIGHT - 10;
@@ -206,6 +206,11 @@ module trex (
 
         // Reached max height.
         if (y_pos < MAX_JUMP_HEIGHT) begin
+            end_jump();
+        end
+
+        // Jumping signal has been removed.
+        if (!jump) begin
             end_jump();
         end
     endtask
