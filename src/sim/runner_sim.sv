@@ -1,4 +1,5 @@
 import runner_pkg::sprite_t;
+import runner_pkg::pos_t;
 import runner_pkg::RENDER_SLOTS;
 
 module runner_sim;
@@ -6,7 +7,7 @@ module runner_sim;
     logic clk = 0, rst = 0, update, jumping = 0, ducking = 0;
 
     sprite_t sprite[RENDER_SLOTS];
-    logic[10:0] pos[RENDER_SLOTS][2];
+    pos_t pos[RENDER_SLOTS];
 
     parameter FPS = 60;
 

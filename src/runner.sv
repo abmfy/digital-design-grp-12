@@ -31,6 +31,11 @@ package runner_pkg;
         logic[7:0] h;
     } sprite_t;
 
+    typedef struct packed {
+        logic[10:0] x;
+        logic[10:0] y;
+    } pos_t;
+
     parameter FPS = 60;
     parameter CLEAR_TIME = 3 * FPS;
 
@@ -157,6 +162,7 @@ endpackage
 
 import runner_pkg::RENDER_SLOTS;
 import runner_pkg::sprite_t;
+import runner_pkg::pos_t;
 
 module runner (
     input clk,
@@ -168,7 +174,7 @@ module runner (
     input ducking,
 
     output sprite_t sprite[RENDER_SLOTS],
-    output logic[10:0] pos[RENDER_SLOTS][2]
+    output pos_t pos[RENDER_SLOTS]
 );
     import runner_pkg::*;
 
@@ -350,6 +356,11 @@ module runner (
 
     // Sprite output. Multiply by 2 for high DPI.
     always_comb begin
+        for (int i = 0; i < RENDER_SLOTS; i++) begin
+            sprite[i] = '{0, 0, 0, 0};
+            pos[i] = '{0, 0};
+        end
+
         sprite[RENDER_INDEX[TREX]] = '{
             SPRITE[TREX][0] + SPRITE_TREX_OFFSET[trex_frame],
             SPRITE[TREX][1],
