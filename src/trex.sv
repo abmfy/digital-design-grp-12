@@ -80,12 +80,20 @@ module trex (
 
             update_frame();
 
-            if (update && next_state == JUMPING) begin
-                if (state == WAITING || state == RUNNING) begin
-                    start_jump(speed);
-                end else if (state == JUMPING) begin
-                    update_jump();
-                end
+            if (update) begin
+                case (next_state)
+                    RUNNING: begin
+                        // Clear jumping state, e.g. jumping velocity.
+                        reset();
+                    end
+                    JUMPING: begin
+                        if (state == WAITING || state == RUNNING) begin
+                            start_jump(speed);
+                        end else if (state == JUMPING) begin
+                            update_jump();
+                        end
+                    end
+                endcase
             end
         end
     end
@@ -93,13 +101,16 @@ module trex (
     always_comb begin
         case (state)
             WAITING: begin
-                next_state = jump ? JUMPING : WAITING;
+                next_state = jump ? RUNNING : WAITING;
             end
             RUNNING: begin
                 next_state = jump ? JUMPING : RUNNING;
             end
             JUMPING: begin
-                next_state = y_pos > GROUND_Y_POS ? RUNNING : JUMPING;
+                next_state = $signed(y_pos) + jump_velocity
+                    > $signed(GROUND_Y_POS)
+                    ? RUNNING
+                    : JUMPING;
             end
             DUCKING: begin
                 // Not implemented yet
@@ -112,6 +123,11 @@ module trex (
                 next_state = WAITING;
             end
         endcase
+
+        // Preserve state if not received update signal.
+        if (!update) begin
+            next_state = state;
+        end
         
         if (crash &&
             (state == RUNNING || state == JUMPING || state == DUCKING)
@@ -119,10 +135,6 @@ module trex (
             next_state = CRASHED;
         end
     end
-
-    // function logic inside_range(logic[5:0] x, logic[5:0] a, logic[5:0] b);
-    //     return a <= x && x < b;
-    // endfunction
 
     task reset;
         x_pos <= START_X_POS;
@@ -195,11 +207,6 @@ module trex (
         // Reached max height.
         if (y_pos < MAX_JUMP_HEIGHT) begin
             end_jump();
-        end
-
-        // Back down at ground level. Jump completed.
-        if (y_pos > GROUND_Y_POS) begin
-            reset();
         end
     endtask
     
