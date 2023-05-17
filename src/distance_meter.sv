@@ -57,9 +57,6 @@ module distance_meter(
 
     always_ff @(posedge clk) begin
         if (rst) begin
-            for (int i = 0; i < MAX_DISTANCE_UNITS; i++) begin
-                digits[i] <= 0;
-            end
             paint <= 1;
             distance_counter <= 0;
             distance <= 0;

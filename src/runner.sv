@@ -334,7 +334,7 @@ module runner (
 
     // Collision check.
     always_comb begin
-        assign crashed = 0;
+        crashed = 0;
     end
 
     // Get the corresponding sprite type for a obstacle frame.
@@ -360,10 +360,10 @@ module runner (
 
         for (int i = 0; i < MAX_OBSTACLES; i++) begin
             // Invisible obstacles
-            sprite[RENDER_INDEX[PTERODACTYL] + i] = '{0, 0, 0, 0};
-            pos[RENDER_INDEX[PTERODACTYL] + i] = '{0, 0};
-
-            if (obstacle_start[i]) begin
+            if (!obstacle_start[i]) begin
+                sprite[RENDER_INDEX[PTERODACTYL] + i] = '{0, 0, 0, 0};
+                pos[RENDER_INDEX[PTERODACTYL] + i] = '{0, 0};
+            end else begin
                 sprite[RENDER_INDEX[element_type(obstacle_frame[i])] + i] = '{
                     SPRITE[element_type(obstacle_frame[i])][0]
                         + SPRITE_OBSTACLE_OFFSET[obstacle_frame[i]]

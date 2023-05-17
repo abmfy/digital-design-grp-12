@@ -68,7 +68,7 @@ module lfsr_prng #(
   // Maximal Length LFSR Feedback Terms
   // Taken from https://users.ece.cmu.edu/~koopman/lfsr/
   // MSB is suppressed for lfsr module
-  parameter [63:0] MAX_POLY_TABLE[0:63] = {
+  parameter logic[63:0] MAX_POLY_TABLE[0:63] = '{
     'h0,
     'h0,
     'h0,
