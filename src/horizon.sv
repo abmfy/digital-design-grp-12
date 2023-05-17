@@ -16,6 +16,9 @@ package horizon_pkg;
     parameter MAX_OBSTACLES = 7;
     parameter MAX_OBSTACLE_DUPLICATION = 2;
     parameter OBSTACLE_TYPES = obstacle_pkg::TYPE_COUNT - 1;
+
+    parameter GAME_WIDTH = 600;
+    parameter SPEED_SCALE = 1024;
 endpackage
 
 import horizon_pkg::MAX_OBSTACLES;
@@ -31,20 +34,26 @@ module horizon (
     input start,
     input crash,
 
-    input[4:0] speed,
+    input[14:0] speed,
 
-    input[10:0] rng_data,
+    input bit[10:0] rng_data,
+
+    // Enable obstacle generation.
+    input has_obstacles,
+
+    output logic obstacle_start[MAX_OBSTACLES],
 
     output logic signed[10:0] obstacle_x_pos[MAX_OBSTACLES],
     output logic[9:0] obstacle_y_pos[MAX_OBSTACLES],
     output logic[9:0] obstacle_width[MAX_OBSTACLES],
     output logic[9:0] obstacle_height[MAX_OBSTACLES],
+    output logic[1:0] obstacle_size[MAX_OBSTACLES],
+
     output obstacle_pkg::frame_t obstacle_frame[MAX_OBSTACLES]
 );
     import horizon_pkg::*;
     import obstacle_pkg::MAX_OBSTACLE_LENGTH;
     import obstacle_pkg::MIN_SPEED;
-    import runner_pkg::GAME_WIDTH;
 
     typedef obstacle_pkg::type_t obstacle_t;
     typedef obstacle_pkg::frame_t obstacle_frame_t;
@@ -56,7 +65,6 @@ module horizon (
     logic[2:0] obstacle_back;
 
     logic obstacle_update;
-    logic obstacle_start[MAX_OBSTACLES];
 
     obstacle_t obstacle_type[MAX_OBSTACLES];
     logic obstacle_remove[MAX_OBSTACLES];
@@ -88,6 +96,8 @@ module horizon (
                 .y_pos(obstacle_y_pos[i]),
                 .width(obstacle_width[i]),
                 .height(obstacle_height[i]),
+                .size(obstacle_size[i]),
+
                 .frame(obstacle_frame[i])
             );
         end
@@ -171,7 +181,7 @@ module horizon (
     // Update existing obstacles and create new ones.
     task update_obstacles_0;
         obstacle_update <= 1;
-        if (obstacle_front == obstacle_back) begin
+        if (has_obstacles && obstacle_front == obstacle_back) begin
             add_new_obstacle();
         end else begin
             if (obstacle_visible[last()] &&
@@ -221,7 +231,7 @@ module horizon (
                 (rng_data + i) % OBSTACLE_TYPES + 1
             );
             if (!duplicate_obstacle_check(typ)
-                && speed >= MIN_SPEED[typ]
+                && speed / SPEED_SCALE >= MIN_SPEED[typ]
             ) begin
                 return typ;
             end

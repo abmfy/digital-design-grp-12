@@ -38,6 +38,7 @@ module trex (
     input clk,
     input rst,
 
+    input update,
     input[5:0] timer,
 
     input[4:0] speed,
@@ -47,10 +48,13 @@ module trex (
 
     output logic[9:0] x_pos,
     output logic[9:0] y_pos,
+    output logic[9:0] width,
+    output logic[9:0] height,
 
-    output logic[2:0] frame
+    output trex_pkg::frame_t frame
 );
     import trex_pkg::*;
+    import util_func::*;
 
     state_t state, next_state;
 
@@ -58,6 +62,9 @@ module trex (
     logic[4:0] gravity_counter;
 
     logic reached_min_height;
+
+    assign width = state == DUCKING ? WIDTH_DUCK : WIDTH;
+    assign height = state == DUCKING ? HEIGHT_DUCK : HEIGHT;
 
     always_ff @(posedge clk) begin
         if (rst) begin
@@ -73,7 +80,7 @@ module trex (
 
             update_frame();
 
-            if (next_state == JUMPING) begin
+            if (update && next_state == JUMPING) begin
                 if (state == WAITING || state == RUNNING) begin
                     start_jump(speed);
                 end else if (state == JUMPING) begin

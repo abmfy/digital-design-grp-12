@@ -44,9 +44,9 @@ package obstacle_pkg;
     };
     parameter int MULTIPLE_SPEED[TYPE_COUNT] = '{
         NONE: 0,
-        CACTUS_SMALL: 4,
-        CACTUS_LARGE: 7,
-        PTERODACTYL: 999
+        CACTUS_SMALL: 4096,
+        CACTUS_LARGE: 7168,
+        PTERODACTYL: 1022976
     };
     parameter int MIN_GAP[TYPE_COUNT] = '{
         NONE: 0,
@@ -58,13 +58,13 @@ package obstacle_pkg;
         NONE: 0,
         CACTUS_SMALL: 0,
         CACTUS_LARGE: 0,
-        PTERODACTYL: 8
+        PTERODACTYL: 8704
     };
     parameter int signed SPEED_OFFSET[TYPE_COUNT] = '{
         NONE: 0,
         CACTUS_SMALL: 0,
         CACTUS_LARGE: 0,
-        PTERODACTYL: 1
+        PTERODACTYL: 819
     };
     parameter int NUM_FRAMES[TYPE_COUNT] = '{
         NONE: 0,
@@ -75,7 +75,8 @@ package obstacle_pkg;
 
     parameter MAX_OBSTACLE_LENGTH = 3;
 
-    parameter RANDOM_SEED = 19260817;
+    parameter GAME_WIDTH = 600;
+    parameter SPEED_SCALE = 1024;
     
 endpackage
 
@@ -85,13 +86,13 @@ module obstacle (
 
     input update,
     input[5:0] timer,
-    input[4:0] speed,
+    input[14:0] speed,
 
     input obstacle_pkg::type_t typ,
     input start,
     input crash,
 
-    input logic[10:0] rng_data,
+    input bit[10:0] rng_data,
 
     output logic remove,
     output logic[10:0] gap,
@@ -102,24 +103,27 @@ module obstacle (
     output logic[9:0] width,
     output logic[9:0] height,
 
+    output logic[1:0] size,
+
     output obstacle_pkg::frame_t frame
 );  
     import obstacle_pkg::*;
 
-    import runner_pkg::GAME_WIDTH;
     import util_func::*;
 
     state_t state, next_state;
 
-    logic[1:0] size;
+    logic signed[11:0] speed_offset;
 
-    logic signed[1:0] speed_offset;
+    logic signed[20:0] x_pos_game;
+
+    assign x_pos = x_pos_game / SPEED_SCALE;
 
     assign visible = x_pos + $signed(width) > 0;
 
     always_ff @(posedge clk) begin
         if (rst) begin
-            x_pos <= 0;
+            x_pos_game <= 0;
             y_pos <= 0;
             width <= 0;
             height <= 0;
@@ -145,10 +149,10 @@ module obstacle (
     always_comb begin
         case (state)
             WAITING: begin
-                next_state = start ? RUNNING : WAITING;
+                next_state = crash ? CRASHED : start ? RUNNING : WAITING;
             end
             RUNNING: begin
-                next_state = remove ? WAITING : RUNNING;
+                next_state = crash ? CRASHED : remove ? WAITING : RUNNING;
             end
             CRASHED: begin
                 next_state = CRASHED;
@@ -167,7 +171,7 @@ module obstacle (
 
         height <= HEIGHT[typ];
         width <= get_width();
-        x_pos<= GAME_WIDTH;
+        x_pos_game <= GAME_WIDTH * SPEED_SCALE;
         y_pos <= Y_POS[typ][timer < 20 ? 0 : timer < 40 ? 1 : 2];
 
         // For obstacles that go at a different speed from the horizon.
@@ -193,7 +197,7 @@ module obstacle (
     endtask
 
     task run;
-        x_pos <= x_pos - $signed(speed) + speed_offset;
+        x_pos_game <= x_pos_game - $signed(speed) + speed_offset;
 
         if (NUM_FRAMES[typ]) begin
             if (typ == PTERODACTYL) begin
@@ -222,7 +226,8 @@ module obstacle (
     // Calculate a random gap size.
     // Minimum gap gets wider as speed increases.
     function logic[10:0] get_gap;
-        static logic[10:0] min_gap = get_width() * speed + MIN_GAP[typ];
+        automatic logic[10:0] min_gap = get_width() * speed / SPEED_SCALE 
+            + MIN_GAP[typ];
         // TODO: Use IP core if this is too slow.
         return rng_data % (min_gap >> 1) + min_gap;
     endfunction

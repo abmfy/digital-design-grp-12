@@ -1,6 +1,7 @@
 // Handles displaying the distance meter.
 package distance_meter_pkg;
-    import runner_pkg::GAME_WIDTH;
+    parameter GAME_WIDTH = 600;
+    parameter SPEED_SCALE = 1024;
 
     parameter WIDTH = 10;
     parameter HEIGHT = 13;
@@ -19,7 +20,7 @@ package distance_meter_pkg;
     parameter ACHIEVEMENT_DISTANCE = 100;
 
     // Used for conversion from pixel distance to a scaled unit.
-    parameter COEFFICIENT = 40;
+    parameter COEFFICIENT = 40 * SPEED_SCALE;
 
     // Flash duration in frames.
     parameter FLASH_DURATION = 15;
@@ -38,15 +39,15 @@ module distance_meter(
     input clk,
     input rst,
 
-    input timer_pulse,
+    input update,
 
-    input[4:0] speed,
+    input[14:0] speed,
 
     output logic[3:0] digits[MAX_DISTANCE_UNITS],
     output logic paint
 );
 
-    logic[5:0] distance_counter;
+    logic[15:0] distance_counter;
     logic[16:0] distance;
 
     logic achievement;
@@ -69,7 +70,7 @@ module distance_meter(
         end else if (!speed) begin
             achievement <= 0;
             paint <= 1;
-        end else if (timer_pulse) begin
+        end else if (update) begin
             if (distance_counter + speed < COEFFICIENT) begin
                 distance_counter <= distance_counter + speed;
             end else begin
@@ -91,7 +92,7 @@ module distance_meter(
             if (achievement) begin
                 // Flash score.
                 if (flash_iterations <= FLASH_ITERATONS) begin
-                    flash_timer <= flash_timer + timer_pulse;
+                    flash_timer <= flash_timer + update;
 
                     if (flash_timer < FLASH_DURATION) begin
                         paint <= 0;
