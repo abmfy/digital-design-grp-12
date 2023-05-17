@@ -45,8 +45,8 @@ module painter #(
     logic element_wait;
     logic[COOR_WIDTH-1:0] sprite_x;
     logic[COOR_WIDTH-1:0] sprite_y;
-    logic[COOR_WIDTH-1:0] frame_x;
-    logic[COOR_WIDTH-1:0] frame_y;
+    logic signed[COOR_WIDTH:0] frame_x;
+    logic signed[COOR_WIDTH:0] frame_y;
     logic[COOR_WIDTH-1:0] element_width;
     logic[COOR_WIDTH-1:0] element_height;
     wire[COOR_WIDTH-1:0] element_x;

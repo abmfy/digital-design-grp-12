@@ -181,8 +181,10 @@ module horizon (
     // Update existing obstacles and create new ones.
     task update_obstacles_0;
         obstacle_update <= 1;
-        if (has_obstacles && obstacle_front == obstacle_back) begin
-            add_new_obstacle();
+        if (obstacle_front == obstacle_back) begin
+            if (has_obstacles) begin
+                add_new_obstacle();
+            end
         end else begin
             if (obstacle_visible[last()] &&
                 obstacle_x_pos[last()] +

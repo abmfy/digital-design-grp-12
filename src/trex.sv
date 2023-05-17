@@ -46,8 +46,8 @@ module trex (
     input jump,
     input crash,
 
-    output logic[9:0] x_pos,
-    output logic[9:0] y_pos,
+    output logic signed[11:0] x_pos,
+    output logic signed[11:0] y_pos,
     output logic[9:0] width,
     output logic[9:0] height,
 
@@ -107,7 +107,7 @@ module trex (
                 next_state = jump ? JUMPING : RUNNING;
             end
             JUMPING: begin
-                next_state = $signed(y_pos) + jump_velocity
+                next_state = y_pos + jump_velocity
                     > $signed(GROUND_Y_POS)
                     ? RUNNING
                     : JUMPING;

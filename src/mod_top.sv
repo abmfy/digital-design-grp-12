@@ -175,15 +175,13 @@ module mod_top (
       .pos
   );
 
-  logic[5:0] timer;
+  logic obstacle_start[MAX_OBSTACLES];
 
   runner runner_inst (
       .clk(clk_33m),
       .rst(!reset_n || reset_btn),
 
-    //   .update(rst_screen_33m),
-
-      .timer,
+      .obstacle_start,
 
       .jumping(clock_btn),
       .ducking(0),
@@ -194,12 +192,22 @@ module mod_top (
 
   dpy_scan dpy_scan_inst (
     .clk(clk_33m),
-    .number(timer),
+    .number(pos[0].x),
     .dp(0),
 
     .digit(dpy_digit),
     .segment(dpy_segment)
   );
 
-  assign leds[31:1] = 32'b01010101010101010101010101010101;
+    assign leds[31:7] = '1;
+    assign leds[6:0] = {
+        obstacle_start[6],
+        obstacle_start[5],
+        obstacle_start[4],
+        obstacle_start[3],
+        obstacle_start[2],
+        obstacle_start[1],
+        obstacle_start[0]
+    };
+//   assign leds[31:1] = 32'b01010101010101010101010101010101;
 endmodule

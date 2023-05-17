@@ -32,8 +32,8 @@ package runner_pkg;
     } sprite_t;
 
     typedef struct packed {
-        logic[10:0] x;
-        logic[10:0] y;
+        logic signed[11:0] x;
+        logic signed[11:0] y;
     } pos_t;
 
     parameter CLK_FREQ = 33_333_333;
@@ -169,14 +169,13 @@ import runner_pkg::pos_t;
 
 module runner (
     input clk,
-    input rst,
-
-    // input update,
-
-    output logic[5:0] timer,
+    input rst,    
 
     input jumping,
     input ducking,
+
+    // DEBUG
+    output logic obstacle_start[MAX_OBSTACLES],
 
     output sprite_t sprite[RENDER_SLOTS],
     output pos_t pos[RENDER_SLOTS]
@@ -191,12 +190,14 @@ module runner (
     logic update;
     logic[19:0] clk_counter;
 
-    // logic[5:0] timer;
+    logic[5:0] timer;
     logic[14:0] speed;
 
     // Generate obstacles only after CLEAR_TIME.
     logic[7:0] clear_timer;
     logic has_obstacles;
+
+    logic start;
 
     logic crashed;
 
@@ -214,8 +215,8 @@ module runner (
         .data_out(rng_data)
     );
 
-    logic[9:0] trex_x_pos;
-    logic[9:0] trex_y_pos;
+    logic signed[11:0] trex_x_pos;
+    logic signed[11:0] trex_y_pos;
     logic[9:0] trex_width;
     logic[9:0] trex_height;
     trex_pkg::frame_t trex_frame;
@@ -252,7 +253,7 @@ module runner (
         .paint(distance_meter_paint)
     );
 
-    logic obstacle_start[MAX_OBSTACLES];
+    // logic obstacle_start[MAX_OBSTACLES];
 
     logic signed[10:0] obstacle_x_pos[MAX_OBSTACLES];
     logic[9:0] obstacle_y_pos[MAX_OBSTACLES];
@@ -269,7 +270,7 @@ module runner (
         .update,
         .timer,
 
-        .start(state == RUNNING),
+        .start,
         .crash(state == CRASHED),
 
         .speed,
@@ -312,6 +313,7 @@ module runner (
             state <= WAITING;
             clk_counter <= 0;
             update <= 0;
+            start <= 0;
             timer <= 0;
             speed <= 0;
             clear_timer <= 0;
@@ -349,6 +351,7 @@ module runner (
     end
 
     task init;
+        start <= 1;
         speed <= SPEED;
     endtask
 

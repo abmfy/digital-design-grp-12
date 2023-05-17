@@ -3,7 +3,9 @@
 module paint_element #(
     COOR_WIDTH = 12,
     ROM_WIDTH = 19,
-    SPRITE_WIDTH = 2446
+    SPRITE_WIDTH = 2446,
+    FRAME_WIDTH = 1280,
+    FRAME_HEIGHT = 300
 ) (
     input clk_33m,
     input rst, // start painting
@@ -11,8 +13,8 @@ module paint_element #(
     input [COOR_WIDTH-1:0] sprite_x,
     input [COOR_WIDTH-1:0] sprite_y,
     // left top coordinate on frame
-    input [COOR_WIDTH-1:0] frame_x,
-    input [COOR_WIDTH-1:0] frame_y,
+    input signed[COOR_WIDTH:0] frame_x,
+    input signed[COOR_WIDTH:0] frame_y,
     // size of the element
     input [COOR_WIDTH-1:0] width,
     input [COOR_WIDTH-1:0] height,
@@ -67,7 +69,19 @@ module paint_element #(
       .q(read_palette)
   );
 
-  assign write_x = finished ? 0 : frame_x + last_x[1];
-  assign write_y = finished ? 0 : frame_y + last_y[1];
-  assign write_palette = finished ? 0 : read_palette;
+  always_comb begin
+    write_x = 0;
+    write_y = 0;
+    write_palette = 0;
+    if (!finished) begin
+      if (frame_x + $signed(last_x[1]) >= 0 &&
+          frame_x + $signed(last_x[1]) < FRAME_WIDTH &&
+          frame_y + $signed(last_y[1]) >= 0 &&
+          frame_y + $signed(last_y[1]) < FRAME_HEIGHT) begin
+        write_x = frame_x + $signed(last_x[1]);
+        write_y = frame_y + $signed(last_y[1]);
+        write_palette = read_palette;
+      end
+    end
+  end
 endmodule
