@@ -36,7 +36,10 @@ package runner_pkg;
         logic[10:0] y;
     } pos_t;
 
+    parameter CLK_FREQ = 33_333_333;
     parameter FPS = 60;
+    parameter CLK_PER_FRAME = CLK_FREQ / FPS;
+
     parameter CLEAR_TIME = 3 * FPS;
 
     // Scale from pixel speed to game speed
@@ -89,13 +92,13 @@ package runner_pkg;
 
     parameter int SPRITE_TREX_OFFSET[8] = '{
         WAITING0: 0,
-        WAITING1: 44,
-        RUNNING0: 88,
-        RUNNING1: 132,
+        WAITING1: 88,
+        RUNNING0: 176,
+        RUNNING1: 264,
         JUMPING0: 0,
-        DUCKING0: 264,
-        DUCKING1: 323,
-        CRASHED0: 220
+        DUCKING0: 528,
+        DUCKING1: 646,
+        CRASHED0: 440
     };
 
     import obstacle_pkg::WIDTH;
@@ -168,7 +171,9 @@ module runner (
     input clk,
     input rst,
 
-    input update,
+    // input update,
+
+    output logic[5:0] timer,
 
     input jumping,
     input ducking,
@@ -183,7 +188,10 @@ module runner (
 
     state_t state, next_state;
 
-    logic[5:0] timer;
+    logic update;
+    logic[19:0] clk_counter;
+
+    // logic[5:0] timer;
     logic[14:0] speed;
 
     // Generate obstacles only after CLEAR_TIME.
@@ -302,12 +310,27 @@ module runner (
     always_ff @(posedge clk) begin
         if (rst) begin
             state <= WAITING;
+            clk_counter <= 0;
+            update <= 0;
             timer <= 0;
             speed <= 0;
             clear_timer <= 0;
             has_obstacles <= 0;
             rng_load <= 1;
         end else begin
+            if (clk_counter + 1 == CLK_PER_FRAME) begin
+                clk_counter <= 0;
+                update <= 1;
+                if (timer + 1 == FPS) begin
+                    timer <= 0;
+                end else begin
+                    timer <= timer + 1;
+                end
+            end else begin
+                clk_counter <= clk_counter + 1;
+                update <= 0;
+            end
+
             if (state == RUNNING && crashed) begin
                 state <= CRASHED;
             end else begin
@@ -330,8 +353,6 @@ module runner (
     endtask
 
     task run;
-        timer <= timer + 1 == FPS ? 0 : timer + 1;
-
         clear_timer <= clear_timer + 1;
         if (clear_timer > CLEAR_TIME) begin
             has_obstacles <= 1;

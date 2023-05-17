@@ -152,13 +152,54 @@ module mod_top (
       .output_blue(video_blue)
   );
 
-  paint_demo paint_demo_inst (
-      .clk_33m(clk_33m),
+//   paint_demo paint_demo_inst (
+//       .clk_33m(clk_33m),
+//       .rst(rst_screen_33m),
+//       .write_x(write_x),
+//       .write_y(write_y),
+//       .write_palette(write_palette)
+//   );
+
+  runner_pkg::sprite_t sprite[RENDER_SLOTS];
+  runner_pkg::pos_t pos[RENDER_SLOTS];
+
+  painter painter_inst (
+      .clk_33m,
       .rst(rst_screen_33m),
-      .jumping(jumping),
-      .ducking(ducking),
-      .write_x(write_x),
-      .write_y(write_y),
-      .write_palette(write_palette)
+
+      .write_x,
+      .write_y,
+      .write_palette,
+
+      .sprite,
+      .pos
   );
+
+  logic[5:0] timer;
+
+  runner runner_inst (
+      .clk(clk_33m),
+      .rst(!reset_n || reset_btn),
+
+    //   .update(rst_screen_33m),
+
+      .timer,
+
+      .jumping(clock_btn),
+      .ducking(0),
+
+      .sprite,
+      .pos
+  );
+
+  dpy_scan dpy_scan_inst (
+    .clk(clk_33m),
+    .number(timer),
+    .dp(0),
+
+    .digit(dpy_digit),
+    .segment(dpy_segment)
+  );
+
+  assign leds[31:1] = 32'b01010101010101010101010101010101;
 endmodule
