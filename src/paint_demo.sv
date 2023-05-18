@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module paint_demo #(
-    COOR_WIDTH = 11,
+    COOR_WIDTH = 12,
     ELEMENT_COUNT = 32,
     ELEMENT_WIDTH = 5
 ) (

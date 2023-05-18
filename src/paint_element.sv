@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module paint_element #(
-    COOR_WIDTH = 11,
+    COOR_WIDTH = 12,
     ROM_WIDTH = 19,
     SPRITE_WIDTH = 2446
 ) (

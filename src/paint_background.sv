@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module paint_background #(
-    COOR_WIDTH = 11,
+    COOR_WIDTH = 12,
     WIDTH = 1280,
     HEIGHT = 300
 ) (

@@ -132,8 +132,8 @@ module mod_top (
   assign leds[15] = jumping;
   assign leds[0] = ducking;
 
-  wire [10:0] write_x;
-  wire [10:0] write_y;
+  wire [11:0] write_x;
+  wire [11:0] write_y;
   wire [1:0] write_palette;
   wire rst_screen_33m;
 

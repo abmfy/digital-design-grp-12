@@ -1,6 +1,6 @@
 // http://tinyvga.com/vga-timing/1280x800@60Hz
 module vga #(
-    COOR_WIDTH = 11,
+    COOR_WIDTH = 12,
     HSIZE = 1280,
     HFP = 1344,
     HSP = 1480,
