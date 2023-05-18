@@ -7,6 +7,8 @@ module paint_demo #(
 ) (
     input clk_33m,
     input rst,
+    input jumping,
+    input ducking,
     output logic [COOR_WIDTH-1:0] write_x,
     output logic [COOR_WIDTH-1:0] write_y,
     output logic [1:0] write_palette
@@ -68,13 +70,23 @@ module paint_demo #(
 
   // element info
 
-  logic [COOR_WIDTH-1:0] dino_x = 0;
+  logic [COOR_WIDTH-1:0] dino_x = 2;
+  logic [COOR_WIDTH-1:0] dino_y = 156;
+  logic signed [COOR_WIDTH-1:0] dino_y_speed = 0;
   logic last_rst = 0;
 
   always_ff @(posedge clk_33m) begin
     if (rst && !last_rst) begin
-      if (dino_x == 1192) dino_x <= 0;
+      if (dino_x == 1164) dino_x <= 2;
       else dino_x <= dino_x + 1;
+
+      if (jumping) dino_y_speed <= dino_y_speed + 10;
+      else if (dino_y > 156) dino_y_speed <= dino_y_speed - 5;
+      else dino_y_speed <= 0;
+
+      if (dino_y - dino_y_speed > 50) dino_y <= 50;
+      else if (dino_y - dino_y_speed < 156) dino_y <= 156;
+      else dino_y <= dino_y - dino_y_speed;
     end
     last_rst <= rst;
   end
@@ -100,12 +112,28 @@ module paint_demo #(
       end
       // dino
       3: begin
-        sprite_x = dino_x & 8 ? 1854 : 1942;
-        sprite_y = 2;
-        frame_x = dino_x;
-        frame_y = 156;
-        element_width = 88;
-        element_height = 94;
+        if (ducking) begin
+          sprite_x = dino_x & 8 ? 2206 : 2324;
+          sprite_y = 36;
+          frame_x = dino_x - 2;
+          frame_y = 190;
+          element_width = 118;
+          element_height = 60;
+        end else if (dino_y > 156) begin
+          sprite_x = 1678;
+          sprite_y = 2;
+          frame_x = dino_x;
+          frame_y = dino_y;
+          element_width = 88;
+          element_height = 94;
+        end else begin
+          sprite_x = dino_x & 8 ? 1854 : 1942;
+          sprite_y = 2;
+          frame_x = dino_x;
+          frame_y = 156;
+          element_width = 88;
+          element_height = 94;
+        end
       end
       5: begin  // cactus
         sprite_x = 850;

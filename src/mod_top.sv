@@ -155,6 +155,8 @@ module mod_top (
   paint_demo paint_demo_inst (
       .clk_33m(clk_33m),
       .rst(rst_screen_33m),
+      .jumping(jumping),
+      .ducking(ducking),
       .write_x(write_x),
       .write_y(write_y),
       .write_palette(write_palette)
