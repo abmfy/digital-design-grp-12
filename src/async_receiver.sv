@@ -27,7 +27,7 @@ module async_receiver (
   assign oversample_tick = (oversample_counter == OVERSAMPLE_DIVISOR - 1);
 
   wire rx_sync;
-  cross_domain #(.INITIAL_VALUE(1)) cross_domain_inst (
+  synchronizer #(.INITIAL_VALUE(1)) synchronizer_rx (
       .clk(clk),
       .enable(oversample_tick),
       .rst(rst),

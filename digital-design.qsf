@@ -85,16 +85,17 @@ set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id sensor_sim
 set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME sensor_sim -section_id sensor_sim
 set_global_assignment -name EDA_TEST_BENCH_FILE src/async_receiver_sim.sv -section_id async_receiver_sim
 set_global_assignment -name EDA_TEST_BENCH_FILE src/sensor_sim.sv -section_id sensor_sim
-set_global_assignment -name SYSTEMVERILOG_FILE src/motion_detector.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/sensor_sim.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/sensor.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/spike_filter.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/cross_domain.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver_sim.sv
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+
 set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver_sim.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/motion_detector.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/sensor.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/sensor_sim.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/spike_filter.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/synchronizer.sv
 set_global_assignment -name QIP_FILE ip/pll/ip_pll.qip
 set_global_assignment -name VERILOG_FILE src/dpy_scan.v
 set_global_assignment -name VERILOG_FILE src/vga.v
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE io.tcl
 set_global_assignment -name SYSTEMVERILOG_FILE src/mod_top.sv
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

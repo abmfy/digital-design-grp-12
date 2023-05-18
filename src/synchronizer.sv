@@ -1,4 +1,4 @@
-module cross_domain (
+module synchronizer (
     input  clk,
     input  enable,
     input  rst,
