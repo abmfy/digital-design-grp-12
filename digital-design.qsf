@@ -1,12 +1,12 @@
 # -------------------------------------------------------------------------- #
 #
 # Copyright (C) 2020  Intel Corporation. All rights reserved.
-# Your use of Intel Corporation's design tools, logic functions 
-# and other software and tools, and any partner logic 
-# functions, and any output files from any of the foregoing 
-# (including device programming or simulation files), and any 
-# associated documentation or information are expressly subject 
-# to the terms and conditions of the Intel Program License 
+# Your use of Intel Corporation's design tools, logic functions
+# and other software and tools, and any partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Intel Program License
 # Subscription Agreement, the Intel Quartus Prime License Agreement,
 # the Intel FPGA IP License Agreement, or other applicable license
 # agreement, including, without limitation, that your use is for
@@ -75,27 +75,26 @@ set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
-set_global_assignment -name EDA_TEST_BENCH_ENABLE_STATUS TEST_BENCH_MODE -section_id eda_simulation
-set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH sensor_sim -section_id eda_simulation
-set_global_assignment -name EDA_TEST_BENCH_NAME async_receiver_sim -section_id eda_simulation
-set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id async_receiver_sim
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME async_receiver_sim -section_id async_receiver_sim
-set_global_assignment -name EDA_TEST_BENCH_NAME sensor_sim -section_id eda_simulation
-set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id sensor_sim
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME sensor_sim -section_id sensor_sim
-set_global_assignment -name EDA_TEST_BENCH_FILE src/async_receiver_sim.sv -section_id async_receiver_sim
-set_global_assignment -name EDA_TEST_BENCH_FILE src/sensor_sim.sv -section_id sensor_sim
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 
-set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver_sim.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/motion_detector.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/sensor.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/sensor_sim.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/spike_filter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/synchronizer.sv
-set_global_assignment -name QIP_FILE ip/pll/ip_pll.qip
+set_global_assignment -name SYSTEMVERILOG_FILE src/spike_filter.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/sensor_sim.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/sensor.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/motion_detector.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver_sim.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver.sv
 set_global_assignment -name VERILOG_FILE src/dpy_scan.v
-set_global_assignment -name VERILOG_FILE src/vga.v
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE io.tcl
 set_global_assignment -name SYSTEMVERILOG_FILE src/mod_top.sv
+set_global_assignment -name QIP_FILE ip/rom/rom_sprite.qip
+set_global_assignment -name QIP_FILE ip/ram/ram_vga.qip
+set_global_assignment -name SYSTEMVERILOG_FILE src/vga.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/palette.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/paint_element.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/paint_demo.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/paint_background.sv
+set_global_assignment -name QIP_FILE ip/ram/ram_cross_domain.qip
+set_global_assignment -name QIP_FILE ip/pll/pll_vga.qip
+set_global_assignment -name QIP_FILE ip/pll/pll_33m.qip
+
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

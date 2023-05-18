@@ -85,6 +85,19 @@ module mod_top (
     output wireless_rx,
     output wireless_set
 );
+  wire clk_vga;
+  pll_vga pll_vga_inst (
+      .inclk0(clk_100m),
+      .c0    (clk_vga)
+  );
+  assign video_clk = clk_vga;
+
+  wire clk_33m;
+  pll_33m pll_33m_inst (
+      .inclk0(clk_100m),
+      .c0    (clk_33m)
+  );
+
   wire [15:0] acceleration;
   wire [15:0] direction;
 
@@ -118,4 +131,32 @@ module mod_top (
 
   assign leds[15] = jumping;
   assign leds[0] = ducking;
+
+  wire [10:0] write_x;
+  wire [10:0] write_y;
+  wire [1:0] write_palette;
+  wire rst_screen_33m;
+
+  vga vga_inst (
+      .clk_vga(clk_vga),
+      .clk_33m(clk_33m),
+      .write_x(write_x),
+      .write_y(write_y),
+      .write_palette(write_palette),
+      .rst_screen_33m(rst_screen_33m),
+      .hsync(video_hsync),
+      .vsync(video_vsync),
+      .data_enable(video_de),
+      .output_red(video_red),
+      .output_green(video_green),
+      .output_blue(video_blue)
+  );
+
+  paint_demo paint_demo_inst (
+      .clk_33m(clk_33m),
+      .rst(rst_screen_33m),
+      .write_x(write_x),
+      .write_y(write_y),
+      .write_palette(write_palette)
+  );
 endmodule
