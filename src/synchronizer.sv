@@ -5,12 +5,12 @@ module synchronizer (
     input  in,
     output out
 );
-  parameter INITIAL_VALUE = 1;
+  parameter logic INITIAL_VALUE = 1'b1;
 
   logic [1:0] sync;
 
   always_ff @(posedge clk) begin
-    if (rst) sync <= {2{INITIAL_VALUE[0]}};
+    if (rst) sync <= {2{INITIAL_VALUE}};
     else if (enable) sync <= {sync[0], in};
   end
 

@@ -6,14 +6,14 @@ module spike_filter (
     output logic out
 );
   parameter WIDTH = 2;
-  parameter INITIAL_VALUE = 1;
+  parameter logic INITIAL_VALUE = 1'b1;
 
   logic [WIDTH-1:0] cnt = 0;
 
   always_ff @(posedge clk) begin
     if (rst) begin
-      cnt <= INITIAL_VALUE[0];
-      out <= INITIAL_VALUE[0];
+      for (integer i = 0; i < WIDTH; ++i) cnt[i] <= INITIAL_VALUE;
+      out <= INITIAL_VALUE;
     end else if (enable) begin
       if (cnt == 0) out <= 0;
       else if (~in) cnt <= cnt - 1;
