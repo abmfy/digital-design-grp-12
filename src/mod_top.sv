@@ -1,16 +1,16 @@
 module mod_top (
     // 时钟、复位
-    input  wire clk_100m,           // 100M 输入时钟
-    input  wire reset_n,            // 上电复位信号，低有效
+    input wire clk_100m,  // 100M 输入时钟
+    input wire reset_n,   // 上电复位信号，低有效
 
     // 开关、LED 等
     input  wire clock_btn,          // 左侧微动开关，推荐作为手动时钟，带消抖电路，按下时为 1
     input  wire reset_btn,          // 右侧微动开关，推荐作为手动复位，带消抖电路，按下时为 1
-    input  wire [3:0]  touch_btn,   // 四个按钮开关，按下时为 0
-    input  wire [15:0] dip_sw,      // 16 位拨码开关，拨到 “ON” 时为 0
-    output wire [31:0] leds,        // 32 位 LED 灯，输出 1 时点亮
-    output wire [7: 0] dpy_digit,   // 七段数码管笔段信号
-    output wire [7: 0] dpy_segment, // 七段数码管位扫描信号
+    input wire [3:0] touch_btn,  // 四个按钮开关，按下时为 0
+    input wire [15:0] dip_sw,  // 16 位拨码开关，拨到 “ON” 时为 0
+    output wire [31:0] leds,  // 32 位 LED 灯，输出 1 时点亮
+    output wire [7:0] dpy_digit,  // 七段数码管笔段信号
+    output wire [7:0] dpy_segment,  // 七段数码管位扫描信号
 
     // // PS/2 键盘、鼠标接口
     // input  wire        ps2_clock,   // PS/2 时钟信号
@@ -29,13 +29,13 @@ module mod_top (
     // output wire        base_ram_we_n,   // SRAM 写使能，低有效
 
     // HDMI 图像输出
-    output wire [7: 0] video_red,   // 红色像素，8位
-    output wire [7: 0] video_green, // 绿色像素，8位
-    output wire [7: 0] video_blue,  // 蓝色像素，8位
-    output wire        video_hsync, // 行同步（水平同步）信号
-    output wire        video_vsync, // 场同步（垂直同步）信号
-    output wire        video_clk,   // 像素时钟输出
-    output wire        video_de     // 行数据有效信号，用于区分消隐区
+    output wire [7:0] video_red,    // 红色像素，8位
+    output wire [7:0] video_green,  // 绿色像素，8位
+    output wire [7:0] video_blue,   // 蓝色像素，8位
+    output wire       video_hsync,  // 行同步（水平同步）信号
+    output wire       video_vsync,  // 场同步（垂直同步）信号
+    output wire       video_clk,    // 像素时钟输出
+    output wire       video_de,     // 行数据有效信号，用于区分消隐区
 
     // // RS-232 串口
     // input  wire        rs232_rxd,   // 接收数据
@@ -79,66 +79,86 @@ module mod_top (
     // input  wire        eth_crs,
     // output wire        eth_mdc,
     // inout  wire        eth_mdio
+
+    // 无线模块（传感器）
+    input  wireless_tx,
+    output wireless_rx,
+    output wireless_set
 );
+  wire clk_vga;
+  pll_vga pll_vga_inst (
+      .inclk0(clk_100m),
+      .c0    (clk_vga)
+  );
+  assign video_clk = clk_vga;
 
-/* =========== Demo code begin =========== */
-wire clk_in = clk_100m;
+  wire clk_33m;
+  pll_33m pll_33m_inst (
+      .inclk0(clk_100m),
+      .c0    (clk_33m)
+  );
 
-// PLL 分频演示，从输入产生不同频率的时钟
-wire clk_vga;
-ip_pll u_ip_pll(
-    .inclk0 (clk_in  ),
-    .c0     (clk_vga )  // 50MHz 像素时钟
-);
+  wire [15:0] acceleration;
+  wire [15:0] direction;
 
-// 七段数码管扫描演示
-reg [31: 0] number;
-dpy_scan u_dpy_scan (
-    .clk     (clk_in      ),
-    .number  (number      ),
-    .dp      (7'b0        ),
-    .digit   (dpy_digit   ),
-    .segment (dpy_segment )
-);
+  sensor sensor_inst (
+      .clk(clk_100m),
+      .rst(reset_btn),
+      .wireless_tx(wireless_tx),
+      .wireless_rx(wireless_rx),
+      .wireless_set(wireless_set),
+      .acceleration(acceleration),
+      .direction(direction)
+  );
 
-// 自增计数器，用于数码管演示
-reg [31: 0] counter;
-always @(posedge clk_in or posedge reset_btn) begin
-    if (reset_btn) begin
-	     counter <= 32'b0;
-		  number <= 32'b0;
-	 end else begin
-        counter <= counter + 32'b1;
-        if (counter == 32'd5_000_000) begin
-            counter <= 32'b0;
-            number <= number + 32'b1;
-        end
-	 end
-end
+  dpy_scan dpy_scan_inst (
+      .clk    (clk_100m),
+      .number ({acceleration, direction}),
+      .dp     (7'b0),
+      .digit  (dpy_digit),
+      .segment(dpy_segment)
+  );
 
-// LED
-assign leds[15:0] = number[15:0];
-assign leds[31:16] = ~(dip_sw);
+  wire jumping;
+  wire ducking;
 
-// 图像输出演示，分辨率 800x600@75Hz，像素时钟为 50MHz，显示渐变色彩条
-wire [11:0] hdata;  // 当前横坐标
-wire [11:0] vdata;  // 当前纵坐标
+  motion_detector motion_detector_inst (
+      .acceleration(acceleration),
+      .direction(direction),
+      .jumping(jumping),
+      .ducking(ducking)
+  );
 
-// 生成彩条数据，分别取坐标低位作为 RGB 值
-// 警告：该图像生成方式仅供演示，请勿使用横纵坐标驱动大量逻辑！！
-assign video_red = vdata < 200 ? hdata[8:1] : 0;
-assign video_green = vdata >= 200 && vdata < 400 ? hdata[8:1] : 0;
-assign video_blue = vdata >= 400 ? hdata[8:1] : 0;
+  assign leds[15] = jumping;
+  assign leds[0] = ducking;
 
-assign video_clk = clk_vga;
-vga #(12, 800, 856, 976, 1040, 600, 637, 643, 666, 1, 1) vga800x600at75 (
-    .clk(clk_vga), 
-    .hdata(hdata), //横坐标
-    .vdata(vdata), //纵坐标
-    .hsync(video_hsync),
-    .vsync(video_vsync),
-    .data_enable(video_de)
-);
-/* =========== Demo code end =========== */
+  wire [11:0] write_x;
+  wire [11:0] write_y;
+  wire [1:0] write_palette;
+  wire rst_screen_33m;
 
+  vga vga_inst (
+      .clk_vga(clk_vga),
+      .clk_33m(clk_33m),
+      .write_x(write_x),
+      .write_y(write_y),
+      .write_palette(write_palette),
+      .rst_screen_33m(rst_screen_33m),
+      .hsync(video_hsync),
+      .vsync(video_vsync),
+      .data_enable(video_de),
+      .output_red(video_red),
+      .output_green(video_green),
+      .output_blue(video_blue)
+  );
+
+  paint_demo paint_demo_inst (
+      .clk_33m(clk_33m),
+      .rst(rst_screen_33m),
+      .jumping(jumping),
+      .ducking(ducking),
+      .write_x(write_x),
+      .write_y(write_y),
+      .write_palette(write_palette)
+  );
 endmodule

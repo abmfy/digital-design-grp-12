@@ -1,12 +1,12 @@
 # -------------------------------------------------------------------------- #
 #
 # Copyright (C) 2020  Intel Corporation. All rights reserved.
-# Your use of Intel Corporation's design tools, logic functions 
-# and other software and tools, and any partner logic 
-# functions, and any output files from any of the foregoing 
-# (including device programming or simulation files), and any 
-# associated documentation or information are expressly subject 
-# to the terms and conditions of the Intel Program License 
+# Your use of Intel Corporation's design tools, logic functions
+# and other software and tools, and any partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Intel Program License
 # Subscription Agreement, the Intel Quartus Prime License Agreement,
 # the Intel FPGA IP License Agreement, or other applicable license
 # agreement, including, without limitation, that your use is for
@@ -81,6 +81,7 @@ set_global_assignment -name EDA_TEST_BENCH_FILE src/sim/trex_sim.sv -section_id 
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
 set_global_assignment -name SYSTEMVERILOG_FILE src/distance_meter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/runner.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/horizon.sv
@@ -89,11 +90,32 @@ set_global_assignment -name SYSTEMVERILOG_FILE src/util/lfsr_prng.sv
 set_global_assignment -name VERILOG_FILE src/util/lfsr.v
 set_global_assignment -name SYSTEMVERILOG_FILE src/obstacle.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/trex.sv
-set_global_assignment -name QIP_FILE ip/pll/ip_pll.qip
+
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS_WEAK_PULLUP "AS INPUT TRI-STATED"
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+
+set_global_assignment -name SYSTEMVERILOG_FILE src/synchronizer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/spike_filter.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/sensor_sim.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/sensor.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/motion_detector.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver_sim.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/async_receiver.sv
 set_global_assignment -name VERILOG_FILE src/dpy_scan.v
-set_global_assignment -name VERILOG_FILE src/vga.v
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE io.tcl
 set_global_assignment -name SYSTEMVERILOG_FILE src/mod_top.sv
-set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform.vwf
-set_global_assignment -name SOURCE_FILE "db/digital-design.cmp.rdb"
+set_global_assignment -name QIP_FILE ip/rom/rom_sprite.qip
+set_global_assignment -name QIP_FILE ip/ram/ram_vga.qip
+set_global_assignment -name SYSTEMVERILOG_FILE src/vga.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/palette.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/paint_element.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/paint_demo.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/paint_background.sv
+set_global_assignment -name QIP_FILE ip/ram/ram_cross_domain.qip
+set_global_assignment -name QIP_FILE ip/pll/pll_vga.qip
+set_global_assignment -name QIP_FILE ip/pll/pll_33m.qip
+
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

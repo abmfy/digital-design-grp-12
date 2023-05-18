@@ -16,6 +16,9 @@ set_location_assignment PIN_A15 -to reset_n
 # each pmod header has 8 io pins
 # numbered 0-7 according to Digilent's specification
 
+set_location_assignment PIN_B19 -to wireless_set
+set_location_assignment PIN_A19 -to wireless_tx
+set_location_assignment PIN_C20 -to wireless_rx
 # set_location_assignment PIN_C19 -to pmod1_io[0]
 # set_location_assignment PIN_B19 -to pmod1_io[1]
 # set_location_assignment PIN_A19 -to pmod1_io[2]
