@@ -2,9 +2,9 @@ import runner_pkg::sprite_t;
 import runner_pkg::pos_t;
 
 module painter #(
-    COOR_WIDTH = 11,
+    COOR_WIDTH = 12,
     ELEMENT_COUNT = 32,
-    ELEMENT_WIDTH = $clog2(COOR_WIDTH)
+    ELEMENT_WIDTH = $clog2(ELEMENT_COUNT)
 ) (
     input clk_33m,
     input rst,
@@ -45,8 +45,8 @@ module painter #(
     logic element_wait;
     logic[COOR_WIDTH-1:0] sprite_x;
     logic[COOR_WIDTH-1:0] sprite_y;
-    logic signed[COOR_WIDTH:0] frame_x;
-    logic signed[COOR_WIDTH:0] frame_y;
+    logic signed[COOR_WIDTH-1:0] frame_x;
+    logic signed[COOR_WIDTH-1:0] frame_y;
     logic[COOR_WIDTH-1:0] element_width;
     logic[COOR_WIDTH-1:0] element_height;
     wire[COOR_WIDTH-1:0] element_x;
@@ -74,16 +74,10 @@ module painter #(
     // element info
 
     always_comb begin
-        frame_x = pos[29].x;
-        frame_y = pos[29].y;
-        sprite_x = sprite[29].x;
-        sprite_y = sprite[29].y;
-        element_width = sprite[29].w;
-        element_height = sprite[29].h;
-        // {frame_x, frame_y}
-        //     = pos[element_index];
-        // {sprite_x, sprite_y, element_width, element_height} 
-        //     = sprite[element_index];
+        {frame_x, frame_y}
+            = pos[element_index];
+        {sprite_x, sprite_y, element_width, element_height} 
+            = sprite[element_index];
     end
 
     // paint which

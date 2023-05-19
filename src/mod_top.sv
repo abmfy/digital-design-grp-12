@@ -111,13 +111,13 @@ module mod_top (
       .direction(direction)
   );
 
-  dpy_scan dpy_scan_inst (
-      .clk    (clk_100m),
-      .number ({acceleration, direction}),
-      .dp     (7'b0),
-      .digit  (dpy_digit),
-      .segment(dpy_segment)
-  );
+//   dpy_scan dpy_scan_inst (
+//       .clk    (clk_100m),
+//       .number ({acceleration, direction}),
+//       .dp     (7'b0),
+//       .digit  (dpy_digit),
+//       .segment(dpy_segment)
+//   );
 
   wire jumping;
   wire ducking;
@@ -129,8 +129,8 @@ module mod_top (
       .ducking(ducking)
   );
 
-  assign leds[15] = jumping;
-  assign leds[0] = ducking;
+//   assign leds[15] = jumping;
+//   assign leds[0] = ducking;
 
   wire [11:0] write_x;
   wire [11:0] write_y;
@@ -186,13 +186,15 @@ module mod_top (
       .jumping(clock_btn),
       .ducking(0),
 
+      .random_seed(dip_sw[10:0]),
+
       .sprite,
       .pos
   );
 
   dpy_scan dpy_scan_inst (
     .clk(clk_33m),
-    .number(pos[0].x),
+    .number(pos[0].x + (pos[0].y << 16)),
     .dp(0),
 
     .digit(dpy_digit),

@@ -214,22 +214,33 @@ module obstacle (
     endtask
 
     function logic[1:0] get_size;
-        return speed > MULTIPLE_SPEED[typ]
-            ? rng_data % MAX_OBSTACLE_LENGTH
-            : 1;
+        return (speed > MULTIPLE_SPEED[typ]
+            ? timer % MAX_OBSTACLE_LENGTH
+            : 0) + 1;
     endfunction
 
     function logic[9:0] get_width;
         return WIDTH[typ] * get_size();
     endfunction
 
+    // logic[10:0] min_gap, gap_calc;
+    // assign min_gap = get_width() * speed / SPEED_SCALE + MIN_GAP[typ];
+
+    // div divider (
+    //     .denom(min_gap / 2),
+    //     .numer(rng_data),
+    //     .remain(gap_calc)
+    // );
+
+    
     // Calculate a random gap size.
     // Minimum gap gets wider as speed increases.
     function logic[10:0] get_gap;
         automatic logic[10:0] min_gap = get_width() * speed / SPEED_SCALE 
             + MIN_GAP[typ];
         // TODO: Use IP core if this is too slow.
-        return rng_data % (min_gap >> 1) + min_gap;
+        return min_gap;
+        // return rng_data % (min_gap >> 1) + min_gap;
     endfunction
 
 endmodule

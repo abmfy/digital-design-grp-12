@@ -13,8 +13,8 @@ module paint_element #(
     input [COOR_WIDTH-1:0] sprite_x,
     input [COOR_WIDTH-1:0] sprite_y,
     // left top coordinate on frame
-    input signed[COOR_WIDTH:0] frame_x,
-    input signed[COOR_WIDTH:0] frame_y,
+    input signed[COOR_WIDTH-1:0] frame_x,
+    input signed[COOR_WIDTH-1:0] frame_y,
     // size of the element
     input [COOR_WIDTH-1:0] width,
     input [COOR_WIDTH-1:0] height,

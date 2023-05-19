@@ -233,7 +233,7 @@ module horizon (
                 (rng_data + i) % OBSTACLE_TYPES + 1
             );
             if (!duplicate_obstacle_check(typ)
-                && speed / SPEED_SCALE >= MIN_SPEED[typ]
+                && speed >= MIN_SPEED[typ]
             ) begin
                 return typ;
             end

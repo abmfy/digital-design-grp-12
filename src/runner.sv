@@ -25,10 +25,10 @@ package runner_pkg;
     } collision_box_t;
 
     typedef struct packed {
-        logic[12:0] x;
-        logic[7:0] y;
-        logic[12:0] w;
-        logic[7:0] h;
+        logic[11:0] x;
+        logic[11:0] y;
+        logic[11:0] w;
+        logic[11:0] h;
     } sprite_t;
 
     typedef struct packed {
@@ -114,17 +114,17 @@ package runner_pkg;
         NONE_0: '{0, 0, 0},
         CACTUS_SMALL_0: '{
             0,
-            WIDTH[CACTUS_SMALL] * 1 * 2,
-            WIDTH[CACTUS_SMALL] * 3 * 2
+            17 * 1 * 2,
+            17 * 3 * 2
         },
         CACTUS_LARGE_0: '{
             0,
-            WIDTH[CACTUS_LARGE] * 1 * 2,
-            WIDTH[CACTUS_LARGE] * 3 * 2
+            25 * 1 * 2,
+            25 * 3 * 2
         },
         PTERODACTYL_0: '{0, 0, 0},
         PTERODACTYL_1: '{
-            WIDTH[PTERODACTYL_0] * 2,
+            46 * 2,
             0,
             0
         }
@@ -174,6 +174,8 @@ module runner (
     input jumping,
     input ducking,
 
+    input[10:0] random_seed,
+
     // DEBUG
     output logic obstacle_start[MAX_OBSTACLES],
 
@@ -209,7 +211,7 @@ module runner (
     ) prng_gap (
         .clk(clk),
         .load(rng_load),
-        .seed(rng_data),
+        .seed(random_seed),
 
         .enable(1),
         .data_out(rng_data)
@@ -394,17 +396,13 @@ module runner (
         pos[RENDER_INDEX[TREX]] = '{trex_x_pos * 2, trex_y_pos * 2};
 
         for (int i = 0; i < MAX_OBSTACLES; i++) begin
-            // Invisible obstacles
-            if (!obstacle_start[i]) begin
-                sprite[RENDER_INDEX[PTERODACTYL] + i] = '{0, 0, 0, 0};
-                pos[RENDER_INDEX[PTERODACTYL] + i] = '{0, 0};
-            end else begin
+            if (obstacle_start[i] && obstacle_frame[i] != obstacle_pkg::NONE_0) begin
                 sprite[RENDER_INDEX[element_type(obstacle_frame[i])] + i] = '{
                     SPRITE[element_type(obstacle_frame[i])][0]
                         + SPRITE_OBSTACLE_OFFSET[obstacle_frame[i]]
                             [obstacle_size[i] - 1],
                     SPRITE[element_type(obstacle_frame[i])][1],
-                    obstacle_width[i] * 2 * obstacle_size[i],
+                    obstacle_width[i] * 2,
                     obstacle_height[i] * 2
                 };
                 pos[RENDER_INDEX[element_type(obstacle_frame[i])] + i] = '{

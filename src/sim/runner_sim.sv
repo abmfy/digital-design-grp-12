@@ -14,7 +14,6 @@ module runner_sim;
     runner dut (
         .clk,
         .rst,
-        .update,
         .jumping,
         .ducking,
 
