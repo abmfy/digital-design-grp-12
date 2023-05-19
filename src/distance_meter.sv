@@ -1,6 +1,6 @@
 // Handles displaying the distance meter.
 package distance_meter_pkg;
-    parameter GAME_WIDTH = 600;
+    parameter GAME_WIDTH = 640;
     parameter SPEED_SCALE = 1024;
 
     parameter WIDTH = 10;

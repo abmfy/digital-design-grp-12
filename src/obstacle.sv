@@ -75,7 +75,7 @@ package obstacle_pkg;
 
     parameter MAX_OBSTACLE_LENGTH = 3;
 
-    parameter GAME_WIDTH = 600;
+    parameter GAME_WIDTH = 640;
     parameter SPEED_SCALE = 1024;
 
     import collision_pkg::collision_box_t;
@@ -301,7 +301,7 @@ module obstacle (
     // Calculate a random gap size.
     // Minimum gap gets wider as speed increases.
     function logic[10:0] get_gap;
-        automatic logic[10:0] min_gap = get_width() * speed / SPEED_SCALE 
+        automatic logic[10:0] min_gap = get_width() * speed / SPEED_SCALE
             + MIN_GAP[typ];
         // TODO: Use IP core if this is too slow.
         return min_gap;

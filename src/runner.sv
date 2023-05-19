@@ -58,7 +58,7 @@ package runner_pkg;
 
     parameter ELEMENT_TYPES = 9;
 
-    parameter GAME_WIDTH = 600;
+    parameter GAME_WIDTH = 640;
     parameter GAME_HEIGHT = 150;
 
     // (x, y)
@@ -142,7 +142,7 @@ module runner (
     input[10:0] random_seed,
 
     // DEBUG
-    output logic obstacle_start[MAX_OBSTACLES],
+    output logic[14:0] speed,
 
     output sprite_t sprite[RENDER_SLOTS],
     output pos_t pos[RENDER_SLOTS]
@@ -159,7 +159,7 @@ module runner (
     logic[19:0] clk_counter;
 
     logic[5:0] timer;
-    logic[14:0] speed;
+    // logic[14:0] speed;
 
     // Generate obstacles only after CLEAR_TIME.
     logic[7:0] clear_timer;
@@ -225,7 +225,7 @@ module runner (
         .paint(distance_meter_paint)
     );
 
-    // logic obstacle_start[MAX_OBSTACLES];
+    logic obstacle_start[MAX_OBSTACLES];
 
     logic signed[10:0] obstacle_x_pos[MAX_OBSTACLES];
     logic[9:0] obstacle_y_pos[MAX_OBSTACLES];
@@ -335,6 +335,10 @@ module runner (
         clear_timer <= clear_timer + 1;
         if (clear_timer > CLEAR_TIME) begin
             has_obstacles <= 1;
+        end
+
+        if (speed + ACCELERATION <= MAX_SPEED) begin
+            speed <= speed + ACCELERATION;
         end
     endtask
 

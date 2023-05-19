@@ -17,7 +17,7 @@ package horizon_pkg;
     parameter MAX_OBSTACLE_DUPLICATION = 2;
     parameter OBSTACLE_TYPES = obstacle_pkg::TYPE_COUNT - 1;
 
-    parameter GAME_WIDTH = 600;
+    parameter GAME_WIDTH = 640;
     parameter SPEED_SCALE = 1024;
 endpackage
 
