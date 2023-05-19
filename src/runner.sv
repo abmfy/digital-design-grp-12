@@ -1,4 +1,4 @@
-package runner_pkg;
+package runner_pkg;    
     typedef enum {
         WAITING,
         RUNNING,
@@ -16,13 +16,6 @@ package runner_pkg;
         TREX,
         STAR
     } element_t;
-
-    typedef struct packed {
-        logic signed[10:0] x;
-        logic[9:0] y;
-        logic[9:0] w;
-        logic[9:0] h;
-    } collision_box_t;
 
     typedef struct packed {
         logic[11:0] x;
@@ -130,36 +123,8 @@ package runner_pkg;
         }
     };
 
-    parameter collision_box_t COLLISION_BOX_TREX[6] = '{
-        '{22, 0, 17, 16},
-        '{1, 18, 30, 9},
-        '{10, 35, 14, 8},
-        '{1, 24, 29, 5},
-        '{5, 30, 21, 4},
-        '{9, 34, 15, 4}
-    };
-
-    parameter collision_box_t COLLISION_BOX_TREX_DUCK = '{1, 18, 55, 25};
-
-    parameter collision_box_t COLLISION_BOX_CACTUS_SMALL[3] = '{
-        '{0, 7, 5, 27},
-        '{4, 0, 6, 34},
-        '{10, 4, 7, 14}
-    };
-
-    parameter collision_box_t COLLISION_BOX_CACTUS_LARGE[3] = '{
-        '{0, 12, 7, 38},
-        '{8, 0, 7, 49},
-        '{13, 10, 10, 38}
-    };
-    
-    parameter collision_box_t COLLISION_BOX_PTERODACTYL[5] = '{
-        '{15, 15, 16, 5},
-        '{18, 21, 24, 6},
-        '{2, 14, 4, 3},
-        '{6, 10, 4, 7},
-        '{10, 8, 6, 9}
-    };
+    parameter TREX_BOX_COUNT = trex_pkg::COLLISION_BOX_COUNT;
+    parameter OBSTACLE_BOX_COUNT = obstacle_pkg::COLLISION_BOX_COUNT;
 
 endpackage
 
@@ -184,6 +149,7 @@ module runner (
 );
     import runner_pkg::*;
 
+    import collision_pkg::*;
     import distance_meter_pkg::MAX_DISTANCE_UNITS;
     import horizon_pkg::MAX_OBSTACLES;
 
@@ -223,6 +189,8 @@ module runner (
     logic[9:0] trex_height;
     trex_pkg::frame_t trex_frame;
 
+    collision_box_t trex_box[TREX_BOX_COUNT];
+
     trex trex_inst (
         .clk,
         .rst,
@@ -238,7 +206,9 @@ module runner (
         .y_pos(trex_y_pos),
         .width(trex_width),
         .height(trex_height),
-        .frame(trex_frame)
+        .frame(trex_frame),
+
+        .collision_box(trex_box)
     );
 
     logic[3:0] distance_meter_digits[MAX_DISTANCE_UNITS];
@@ -265,6 +235,8 @@ module runner (
 
     obstacle_pkg::frame_t obstacle_frame[MAX_OBSTACLES];
 
+    collision_box_t obstacle_box[OBSTACLE_BOX_COUNT];
+
     horizon horizon_inst (
         .clk,
         .rst,
@@ -289,7 +261,9 @@ module runner (
         .obstacle_height,
         .obstacle_size,
 
-        .obstacle_frame
+        .obstacle_frame,
+
+        .collision_box(obstacle_box)
     );
 
     always_comb begin
@@ -367,6 +341,11 @@ module runner (
     // Collision check.
     always_comb begin
         crashed = 0;
+        for (int i = 0; i < TREX_BOX_COUNT; i++) begin
+            for (int j = 0; j < OBSTACLE_BOX_COUNT; j++) begin
+                crashed |= box_compare(trex_box[i], obstacle_box[j]);
+            end
+        end
     end
 
     // Get the corresponding sprite type for a obstacle frame.

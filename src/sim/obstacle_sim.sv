@@ -1,48 +1,61 @@
 `timescale 1ns / 1ps
 
-parameter CLK_FREQ = 100_000_000;
-parameter FPS = 60;
-parameter CLK_PER_FRAME = CLK_FREQ / FPS;
-
 module obstacle_sim;
     import obstacle_pkg::*;
+
+    import collision_pkg::*;
+
+    parameter FPS = 60;
+    parameter CLK_PER_FRAME = 10;
     
     logic clk;
     logic rst;
 
+    logic update;
     logic[5:0] timer = 0;
+    logic[14:0] speed = 6 * 1024;
 
-    type_t typ = CACTUS_SMALL;
+    type_t typ = NONE;
     logic start = 0;
     logic crash = 0;
 
-    logic[1:0] size = 0;
+    bit[10:0] rng_data;
 
-    logic[3:0] speed = 0;
+    logic remove;
+    logic[10:0] gap;
+    logic visible;
 
-    logic signed[9:0] x_pos;
+    logic signed[10:0] x_pos;
     logic[9:0] y_pos;
     logic[9:0] width;
     logic[9:0] height;
 
-    logic[11:0] sprite_x_pos;
-    logic[11:0] sprite_y_pos;
+    logic[1:0] size = 0;
+
+    frame_t frame;
+
+    collision_box_t collision_box[COLLISION_BOX_COUNT];
     
     obstacle dut (
         .clk,
         .rst,
+        .update,
         .timer,
+        .speed,
         .typ,
         .start,
         .crash,
-        .size,
-        .speed,
+        .rng_data,
+        .remove,
+        .gap,
+        .visible,
         .x_pos,
         .y_pos,
         .width,
         .height,
-        .sprite_x_pos,
-        .sprite_y_pos
+        .size,
+        .frame,
+        .collision_box
     );
 
     integer counter = 0;
@@ -51,12 +64,16 @@ module obstacle_sim;
         forever begin
             #5 clk = 1;
             counter = counter + 1;
+            rng_data = $random;
             if (counter == CLK_PER_FRAME) begin
                 counter = 0;
+                update = 1;
                 timer = timer + 1;
                 if (timer == FPS) begin
                     timer = 0;
                 end
+            end else begin
+                update = 0;
             end
             #5 clk = 0;
         end
@@ -66,30 +83,23 @@ module obstacle_sim;
         #100 rst = 1;
         #100 rst = 0;
         #100;
-        speed = 6;
         crash = 0;
 
         typ = CACTUS_LARGE;
         size = 2;
         start = 1;
-        #10;
-        start = 0;
-        #1000;
+        #10000;
 
         typ = CACTUS_SMALL;
         size = 2;
         start = 1;
-        #10;
-        start = 0;
-        #1000;
+        #10000;
 
         #1000;
         typ = PTERODACTYL;
         size = 2;
         start = 1;
-        #10;
-        start = 0;
-        #1000;
+        #10000;
 
         $finish;
     end

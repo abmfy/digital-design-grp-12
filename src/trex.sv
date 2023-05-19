@@ -31,6 +31,21 @@ package trex_pkg;
 
     parameter MIN_JUMP_HEIGHT = GROUND_Y_POS - 30;
 
+    import collision_pkg::collision_box_t;
+
+    parameter COLLISION_BOX_COUNT = 6;
+
+    parameter collision_box_t COLLISION_BOX[COLLISION_BOX_COUNT] = '{
+        '{22, 0, 17, 16},
+        '{1, 18, 30, 9},
+        '{10, 35, 14, 8},
+        '{1, 24, 29, 5},
+        '{5, 30, 21, 4},
+        '{9, 34, 15, 4}
+    };
+    
+    parameter collision_box_t COLLISION_BOX_DUCK = '{1, 18, 55, 25};
+
 endpackage
 
 // T-rex game character.
@@ -51,9 +66,14 @@ module trex (
     output logic[9:0] width,
     output logic[9:0] height,
 
-    output trex_pkg::frame_t frame
+    output trex_pkg::frame_t frame,
+
+    output collision_pkg::collision_box_t
+        collision_box[trex_pkg::COLLISION_BOX_COUNT]
 );
     import trex_pkg::*;
+
+    import collision_pkg::*;
     import util_func::*;
 
     state_t state, next_state;
@@ -133,6 +153,16 @@ module trex (
             (state == RUNNING || state == JUMPING || state == DUCKING)
         ) begin
             next_state = CRASHED;
+        end
+    end
+
+    always_comb begin
+        for (int i = 0; i < COLLISION_BOX_COUNT; i++) begin
+            collision_box[i] = create_adjusted_collision_box(
+                state != DUCKING ? COLLISION_BOX[i] : COLLISION_BOX_DUCK,
+                x_pos,
+                y_pos
+            );
         end
     end
 

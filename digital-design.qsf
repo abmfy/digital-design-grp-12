@@ -77,6 +77,14 @@ set_global_assignment -name EDA_TEST_BENCH_FILE src/sim/trex_sim.sv -section_id 
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS_WEAK_PULLUP "AS INPUT TRI-STATED"
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+
+set_global_assignment -name SYSTEMVERILOG_FILE src/util/collision.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/painter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/distance_meter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/runner.sv
@@ -86,13 +94,6 @@ set_global_assignment -name SYSTEMVERILOG_FILE src/util/lfsr_prng.sv
 set_global_assignment -name VERILOG_FILE src/util/lfsr.v
 set_global_assignment -name SYSTEMVERILOG_FILE src/obstacle.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/trex.sv
-
-set_global_assignment -name RESERVE_ALL_UNUSED_PINS_WEAK_PULLUP "AS INPUT TRI-STATED"
-set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
-set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
-set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
-set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
-
 set_global_assignment -name SYSTEMVERILOG_FILE src/synchronizer.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/spike_filter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/sensor_sim.sv

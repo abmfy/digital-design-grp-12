@@ -1,8 +1,9 @@
-import horizon_pkg::MAX_OBSTACLES;
-
 module horizon_sim;
+    import horizon_pkg::*;
 
     import obstacle_pkg::frame_t;
+
+    import collision_pkg::*;
 
     parameter FPS = 60;
     parameter RANDOM_SEED = 19260817;
@@ -16,13 +17,16 @@ module horizon_sim;
     logic start = 0;
     logic crash = 0;
 
-    logic[4:0] speed = 6;
+    logic[14:0] speed = 6 * 1024;
 
     logic signed[10:0] obstacle_x_pos[MAX_OBSTACLES];
     logic[9:0] obstacle_y_pos[MAX_OBSTACLES];
     logic[9:0] obstacle_width[MAX_OBSTACLES];
     logic[9:0] obstacle_height[MAX_OBSTACLES];
     frame_t obstacle_frame[MAX_OBSTACLES];
+
+    collision_pkg::collision_box_t
+        collision_box[obstacle_pkg::COLLISION_BOX_COUNT];
 
     logic rng_load = 1;
     logic[10:0] rng_data;
@@ -46,12 +50,14 @@ module horizon_sim;
         .start,
         .crash,
         .rng_data,
+        .has_obstacles(1),
         .speed,
         .obstacle_x_pos,
         .obstacle_y_pos,
         .obstacle_width,
         .obstacle_height,
-        .obstacle_frame
+        .obstacle_frame,
+        .collision_box
     );
 
     assign update = timer % 7 == 0;

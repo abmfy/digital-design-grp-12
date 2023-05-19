@@ -49,7 +49,10 @@ module horizon (
     output logic[9:0] obstacle_height[MAX_OBSTACLES],
     output logic[1:0] obstacle_size[MAX_OBSTACLES],
 
-    output obstacle_pkg::frame_t obstacle_frame[MAX_OBSTACLES]
+    output obstacle_pkg::frame_t obstacle_frame[MAX_OBSTACLES],
+
+    output collision_pkg::collision_box_t
+        collision_box[obstacle_pkg::COLLISION_BOX_COUNT]
 );
     import horizon_pkg::*;
     import obstacle_pkg::MAX_OBSTACLE_LENGTH;
@@ -70,6 +73,9 @@ module horizon (
     logic obstacle_remove[MAX_OBSTACLES];
     logic[10:0] obstacle_gap[MAX_OBSTACLES];
     logic obstacle_visible[MAX_OBSTACLES];
+
+    collision_pkg::collision_box_t
+        obstacle_box[MAX_OBSTACLES][obstacle_pkg::COLLISION_BOX_COUNT];
 
     genvar i;
     generate
@@ -98,7 +104,9 @@ module horizon (
                 .height(obstacle_height[i]),
                 .size(obstacle_size[i]),
 
-                .frame(obstacle_frame[i])
+                .frame(obstacle_frame[i]),
+
+                .collision_box(obstacle_box[i])
             );
         end
     endgenerate
@@ -162,6 +170,9 @@ module horizon (
             endcase
         end
     end
+
+    // Collision box for the leftmost obstacle.
+    assign collision_box = obstacle_box[obstacle_front];
 
     // Mod increment.
     function logic[2:0] incr(logic[2:0] x);

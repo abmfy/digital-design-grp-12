@@ -77,6 +77,42 @@ package obstacle_pkg;
 
     parameter GAME_WIDTH = 600;
     parameter SPEED_SCALE = 1024;
+
+    import collision_pkg::collision_box_t;
+
+    parameter COLLISION_BOX_COUNT = 5;
+
+    parameter collision_box_t
+        COLLISION_BOX[TYPE_COUNT][COLLISION_BOX_COUNT] = '{
+        NONE: '{
+            '{0, 0, 0, 0},
+            '{0, 0, 0, 0},
+            '{0, 0, 0, 0},
+            '{0, 0, 0, 0},
+            '{0, 0, 0, 0}
+        },
+        CACTUS_SMALL: '{
+            '{0, 7, 5, 27},
+            '{4, 0, 6, 34},
+            '{10, 4, 7, 14},
+            '{0, 0, 0, 0},
+            '{0, 0, 0, 0}
+        },
+        CACTUS_LARGE: '{
+            '{0, 12, 7, 38},
+            '{8, 0, 7, 49},
+            '{13, 10, 10, 38},
+            '{0, 0, 0, 0},
+            '{0, 0, 0, 0}
+        },
+        PTERODACTYL: '{
+            '{15, 15, 16, 5},
+            '{18, 21, 24, 6},
+            '{2, 14, 4, 3},
+            '{6, 10, 4, 7},
+            '{10, 8, 6, 9}
+        }
+    };
     
 endpackage
 
@@ -105,10 +141,14 @@ module obstacle (
 
     output logic[1:0] size,
 
-    output obstacle_pkg::frame_t frame
+    output obstacle_pkg::frame_t frame,
+
+    output collision_pkg::collision_box_t
+        collision_box[obstacle_pkg::COLLISION_BOX_COUNT]
 );  
     import obstacle_pkg::*;
 
+    import collision_pkg::*;
     import util_func::*;
 
     state_t state, next_state;
@@ -161,6 +201,31 @@ module obstacle (
                 next_state = WAITING;
             end
         endcase
+    end
+
+    always_comb begin
+        // Make a copy of the collision boxes, since these will change based on
+        // obstacle type and size.
+        automatic collision_box_t b[COLLISION_BOX_COUNT] = COLLISION_BOX[typ];
+
+        // Make collision box adjustments,
+        // Central box is adjusted to the size as one box.
+        //      ____        ______        ________
+        //    _|   |-|    _|     |-|    _|       |-|
+        //   | |<->| |   | |<--->| |   | |<----->| |
+        //   | | 1 | |   | |  2  | |   | |   3   | |
+        //   |_|___|_|   |_|_____|_|   |_|_______|_|
+        if (size > 1) begin
+            b[1].w = width - b[0].w - b[2].w;
+            b[2].x = width - b[2].w;
+        end
+
+        for (int i = 0; i < COLLISION_BOX_COUNT; i++) begin
+            collision_box[i] = create_adjusted_collision_box(
+                b[i],
+                x_pos, y_pos
+            );
+        end
     end
 
     task initialize;
