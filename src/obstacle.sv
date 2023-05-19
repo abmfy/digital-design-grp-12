@@ -163,6 +163,7 @@ module obstacle (
 
     always_ff @(posedge clk) begin
         if (rst) begin
+            state <= WAITING;
             x_pos_game <= 0;
             y_pos <= 0;
             width <= 0;
