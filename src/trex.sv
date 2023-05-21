@@ -220,13 +220,13 @@ module trex (
 
     // Update frame for a jump.
     task update_jump;
-        y_pos <= y_pos + jump_velocity;
-
         if (gravity_counter + GRAVITY >= 10) begin
             gravity_counter <= gravity_counter + GRAVITY - 10;
             jump_velocity <= jump_velocity + 1;
+            y_pos <= y_pos + jump_velocity + 1;
         end else begin
             gravity_counter <= gravity_counter + GRAVITY;
+            y_pos <= y_pos + jump_velocity;
         end
 
         // Minimum height has been reached.
