@@ -14,7 +14,9 @@ module painter #(
 
     output logic[COOR_WIDTH-1:0] write_x,
     output logic[COOR_WIDTH-1:0] write_y,
-    output logic[1:0] write_palette
+    output logic[1:0] write_palette,
+
+    output logic finished
 );
     logic painting_background;
     logic[ELEMENT_WIDTH-1:0] element_index;
@@ -90,6 +92,7 @@ module painter #(
             element_index <= 0;
             element_rst <= 1;
             element_wait <= 1;
+            finished <= 0;
         end else if (painting_background) begin
             if (background_wait) background_wait <= 0;
             else if (background_finished) painting_background <= 0;
@@ -103,6 +106,10 @@ module painter #(
                 element_wait  <= 1;
             end else begin
                 element_rst <= 0;
+            end
+
+            if (element_finished && element_index == ELEMENT_COUNT - 1) begin
+                finished <= 1;
             end
         end
     end

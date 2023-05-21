@@ -163,6 +163,8 @@ module mod_top (
   runner_pkg::sprite_t sprite[RENDER_SLOTS];
   runner_pkg::pos_t pos[RENDER_SLOTS];
 
+  logic painter_finished;
+
   painter painter_inst (
       .clk_33m,
       .rst(rst_screen_33m),
@@ -172,19 +174,23 @@ module mod_top (
       .write_palette,
 
       .sprite,
-      .pos
+      .pos,
+
+      .finished(painter_finished)
   );
 
   logic[14:0] speed;
 
   runner runner_inst (
       .clk(clk_33m),
-      .rst(!reset_n || reset_btn),
+      .rst(reset_btn),
 
       .speed,
 
       .jumping(clock_btn),
       .ducking(0),
+
+      .painter_finished,
 
       .random_seed(dip_sw[10:0]),
 
@@ -195,7 +201,7 @@ module mod_top (
   dpy_scan dpy_scan_inst (
     .clk(clk_33m),
     .number(speed),
-    .dp(0),
+    .dp(painter_finished),
 
     .digit(dpy_digit),
     .segment(dpy_segment)

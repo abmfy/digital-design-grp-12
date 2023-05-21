@@ -219,7 +219,6 @@ module obstacle (
             size <= 0;
             speed_offset <= 0;
             gap <= 0;
-            // min_gap <= 0;
             frame <= NONE_0;
         end else begin
             state <= next_state;

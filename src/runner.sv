@@ -139,6 +139,8 @@ module runner (
     input jumping,
     input ducking,
 
+    input painter_finished,
+
     input[10:0] random_seed,
 
     // DEBUG
@@ -168,6 +170,8 @@ module runner (
     logic start;
 
     logic crashed;
+
+    logic painter_finished_last;
 
     logic rng_load;
     bit[10:0] rng_data;
@@ -291,13 +295,16 @@ module runner (
             update <= 0;
             start <= 0;
             timer <= 0;
+            painter_finished_last <= 0;
             speed <= 0;
             clear_timer <= 0;
             has_obstacles <= 0;
             rng_load <= 1;
         end else begin
-            if (clk_counter + 1 == CLK_PER_FRAME) begin
-                clk_counter <= 0;
+            painter_finished_last <= painter_finished;
+
+            // Posedge of painter_finished, step game loop
+            if (painter_finished && !painter_finished_last) begin
                 update <= 1;
                 if (timer + 1 == FPS) begin
                     timer <= 0;
@@ -305,7 +312,6 @@ module runner (
                     timer <= timer + 1;
                 end
             end else begin
-                clk_counter <= clk_counter + 1;
                 update <= 0;
             end
 
