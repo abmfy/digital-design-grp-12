@@ -225,7 +225,7 @@ module horizon (
     // Returns whether the previous two obstacles are the same as the next one.
     function logic duplicate_obstacle_check(obstacle_t typ);
         automatic int duplicate_count = 0;
-        automatic int now = decr(last());
+        automatic int now = last();
         for (int i = 0;
              i < MAX_OBSTACLE_DUPLICATION;
              i++, now = decr(now)
