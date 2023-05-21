@@ -55,6 +55,7 @@
 *.tcl
 !/io.tcl
 *.txt
+greybox_tmp
 # Explicitly add any text files used
 *~
 *example*

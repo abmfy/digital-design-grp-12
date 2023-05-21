@@ -197,10 +197,12 @@ module horizon (
                 add_new_obstacle();
             end
         end else begin
+            // Add new obstacle if gap is large enough. 
             if (obstacle_visible[last()] &&
+                15'sb0 + 
                 obstacle_x_pos[last()] +
                 $signed(obstacle_width[last()]) +
-                $signed(obstacle_gap[last()]) < $signed(GAME_WIDTH)
+                $signed(12'(obstacle_gap[last()])) < $signed(GAME_WIDTH)
             ) begin
                 add_new_obstacle();
             end
