@@ -14,9 +14,11 @@ package obstacle_pkg;
         PTERODACTYL_1
     } frame_t;
 
-    typedef enum logic[1:0] {
+    typedef enum {
         WAITING,
+        INITING,
         RUNNING,
+        UPDATING,
         CRASHED
     } state_t;
 
@@ -161,6 +163,50 @@ module obstacle (
 
     assign visible = x_pos + $signed(width) > 0;
 
+    logic[10:0] min_gap;
+    assign min_gap = get_width() * (speed / SPEED_SCALE) + MIN_GAP[typ];
+
+    logic[10:0] div_denom, div_numer, div_remain;
+    div divider (
+        .clock(clk),
+        .denom(div_denom),
+        .numer(div_numer),
+        .remain(div_remain)
+    );
+
+    always_comb begin
+        next_state = state;
+        case (state)
+            WAITING: begin
+                if (update && start) begin
+                    next_state = INITING;
+                end
+            end
+            // Calculating gap requires generating random number and division,
+            // which is time consuming, so we break this calculation into
+            // two cycles to enhance timing.
+            INITING: begin
+                next_state = RUNNING;
+            end
+            RUNNING: begin
+                if (remove) begin
+                    next_state = WAITING;
+                end else if (update) begin
+                    next_state = UPDATING;
+                end
+            end
+            UPDATING: begin
+                next_state = RUNNING;
+            end
+            CRASHED: begin
+                next_state = CRASHED;
+            end
+        endcase
+        if (crash) begin
+            next_state = CRASHED;
+        end
+    end
+
     always_ff @(posedge clk) begin
         if (rst) begin
             state <= WAITING;
@@ -173,35 +219,25 @@ module obstacle (
             size <= 0;
             speed_offset <= 0;
             gap <= 0;
+            // min_gap <= 0;
             frame <= NONE_0;
-        end else if (update) begin
+        end else begin
             state <= next_state;
 
-            if (next_state == RUNNING) begin
-                if (state == WAITING) begin
-                    initialize();
-                end else begin
+            case (next_state)
+                INITING: begin
+                    init();
+                end
+                RUNNING: begin
+                    if (state == INITING) begin
+                        update_gap();
+                    end
+                end
+                UPDATING: begin
                     run();
                 end
-            end
+            endcase
         end
-    end
-
-    always_comb begin
-        case (state)
-            WAITING: begin
-                next_state = crash ? CRASHED : start ? RUNNING : WAITING;
-            end
-            RUNNING: begin
-                next_state = crash ? CRASHED : remove ? WAITING : RUNNING;
-            end
-            CRASHED: begin
-                next_state = CRASHED;
-            end
-            default: begin
-                next_state = WAITING;
-            end
-        endcase
     end
 
     always_comb begin
@@ -229,7 +265,7 @@ module obstacle (
         end
     end
 
-    task initialize;
+    task init;
         remove <= 0;
 
         // Only allow sizing if we're at the right speed.
@@ -243,7 +279,7 @@ module obstacle (
         // For obstacles that go at a different speed from the horizon.
         speed_offset <= timer[0] ? SPEED_OFFSET[typ] : -SPEED_OFFSET[typ];
 
-        gap <= get_gap();
+        calc_gap();
 
         case (typ)
             CACTUS_SMALL: begin
@@ -260,6 +296,18 @@ module obstacle (
             end
         endcase
 
+    endtask
+
+    // Calculate a random gap size.
+    // Minimum gap gets wider as speed increases.
+    task calc_gap;
+        div_numer <= rng_data;
+        div_denom <= min_gap / 2;
+    endtask
+
+    task update_gap;
+        // Wait for the divider to finish.
+        gap <= div_remain + min_gap;
     endtask
 
     task run;
@@ -287,26 +335,6 @@ module obstacle (
 
     function logic[9:0] get_width;
         return WIDTH[typ] * get_size();
-    endfunction
-
-    // logic[10:0] min_gap, gap_calc;
-    // assign min_gap = get_width() * speed / SPEED_SCALE + MIN_GAP[typ];
-
-    // div divider (
-    //     .denom(min_gap / 2),
-    //     .numer(rng_data),
-    //     .remain(gap_calc)
-    // );
-
-    
-    // Calculate a random gap size.
-    // Minimum gap gets wider as speed increases.
-    function logic[10:0] get_gap;
-        automatic logic[10:0] min_gap = get_width() * speed / SPEED_SCALE
-            + MIN_GAP[typ];
-        // TODO: Use IP core if this is too slow.
-        return min_gap;
-        // return rng_data % (min_gap >> 1) + min_gap;
     endfunction
 
 endmodule
