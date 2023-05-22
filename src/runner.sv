@@ -369,52 +369,58 @@ module runner (
     endfunction
 
     // Sprite output. Multiply by 2 for high DPI.
-    always_comb begin
+    always_ff @(posedge clk) begin
         for (int i = 0; i < RENDER_SLOTS; i++) begin
             sprite[i] = '{0, 0, 0, 0};
             pos[i] = '{0, 0};
         end
 
-        sprite[RENDER_INDEX[TREX]] = '{
-            SPRITE[TREX][0] + SPRITE_TREX_OFFSET[trex_frame],
-            SPRITE[TREX][1],
-            trex_width * 2,
-            trex_pkg::HEIGHT * 2
-        };
-        pos[RENDER_INDEX[TREX]] = '{trex_x_pos * 2, trex_y_pos * 2};
+        if (!rst) begin
+            sprite[RENDER_INDEX[TREX]] <= '{
+                SPRITE[TREX][0] + SPRITE_TREX_OFFSET[trex_frame],
+                SPRITE[TREX][1],
+                trex_width * 2,
+                trex_pkg::HEIGHT * 2
+            };
+            pos[RENDER_INDEX[TREX]] <= '{trex_x_pos * 2, trex_y_pos * 2};
 
-        for (int i = 0; i < MAX_OBSTACLES; i++) begin
-            if (obstacle_start[i] && obstacle_frame[i] != obstacle_pkg::NONE_0) begin
-                sprite[RENDER_INDEX[element_type(obstacle_frame[i])] + i] = '{
-                    SPRITE[element_type(obstacle_frame[i])][0]
-                        + SPRITE_OBSTACLE_OFFSET[obstacle_frame[i]]
-                            [obstacle_size[i] - 1],
-                    SPRITE[element_type(obstacle_frame[i])][1],
-                    obstacle_width[i] * 2,
-                    obstacle_height[i] * 2
-                };
-                pos[RENDER_INDEX[element_type(obstacle_frame[i])] + i] = '{
-                    obstacle_x_pos[i] * 2,
-                    obstacle_y_pos[i] * 2
-                };
+            for (int i = 0; i < MAX_OBSTACLES; i++) begin
+                if (obstacle_start[i]
+                    && obstacle_frame[i] != obstacle_pkg::NONE_0
+                ) begin
+                    sprite[RENDER_INDEX[element_type(obstacle_frame[i])]
+                        + i] <= '{
+                        SPRITE[element_type(obstacle_frame[i])][0]
+                            + SPRITE_OBSTACLE_OFFSET[obstacle_frame[i]]
+                                [obstacle_size[i] - 1],
+                        SPRITE[element_type(obstacle_frame[i])][1],
+                        obstacle_width[i] * 2,
+                        obstacle_height[i] * 2
+                    };
+                    pos[RENDER_INDEX[element_type(obstacle_frame[i])]
+                        + i] <= '{
+                        obstacle_x_pos[i] * 2,
+                        obstacle_y_pos[i] * 2
+                    };
+                end
             end
-        end
 
-        if (distance_meter_paint) begin
-            for (int i = 0; i < MAX_DISTANCE_UNITS; i++) begin
-                sprite[RENDER_INDEX[TEXT_SPRITE] + i] = '{
-                    SPRITE[TEXT_SPRITE][0]
-                        + distance_meter_digits[i]
-                        * distance_meter_pkg::WIDTH * 2,
-                    SPRITE[TEXT_SPRITE][1],
-                    distance_meter_pkg::WIDTH * 2,
-                    distance_meter_pkg::HEIGHT * 2
-                };
-                pos[RENDER_INDEX[TEXT_SPRITE] + i] = '{
-                    distance_meter_pkg::X
-                        + i * distance_meter_pkg::DEST_WIDTH * 2,
-                    distance_meter_pkg::Y
-                };
+            if (distance_meter_paint) begin
+                for (int i = 0; i < MAX_DISTANCE_UNITS; i++) begin
+                    sprite[RENDER_INDEX[TEXT_SPRITE] + i] <= '{
+                        SPRITE[TEXT_SPRITE][0]
+                            + distance_meter_digits[i]
+                            * distance_meter_pkg::WIDTH * 2,
+                        SPRITE[TEXT_SPRITE][1],
+                        distance_meter_pkg::WIDTH * 2,
+                        distance_meter_pkg::HEIGHT * 2
+                    };
+                    pos[RENDER_INDEX[TEXT_SPRITE] + i] <= '{
+                        distance_meter_pkg::X
+                            + i * distance_meter_pkg::DEST_WIDTH * 2,
+                        distance_meter_pkg::Y
+                    };
+                end
             end
         end
     end

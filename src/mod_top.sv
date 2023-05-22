@@ -201,7 +201,7 @@ module mod_top (
   dpy_scan dpy_scan_inst (
     .clk(clk_33m),
     .number(speed),
-    .dp(painter_finished),
+    .dp(0),
 
     .digit(dpy_digit),
     .segment(dpy_segment)
