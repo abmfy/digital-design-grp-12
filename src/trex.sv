@@ -11,13 +11,15 @@ package trex_pkg;
         WAITING,
         RUNNING,
         JUMPING,
+        DROPPING,
         DUCKING,
         CRASHED
     } state_t;
 
     parameter signed DROP_VELOCITY = -5;
     parameter HEIGHT = 47;
-    parameter HEIGHT_DUCK  = 25;
+    parameter SPEED_DROP_VELOCITY = 1;
+    parameter SPEED_DROP_COEFFICIENT = 3;
     parameter START_X_POS = 20;
     parameter WIDTH = 44;
     parameter WIDTH_DUCK = 59;
@@ -59,6 +61,7 @@ module trex (
     input[4:0] speed,
 
     input jump,
+    input duck,
     input crash,
 
     output logic signed[11:0] x_pos,
@@ -84,7 +87,7 @@ module trex (
     logic reached_min_height;
 
     assign width = state == DUCKING ? WIDTH_DUCK : WIDTH;
-    assign height = state == DUCKING ? HEIGHT_DUCK : HEIGHT;
+    assign height = HEIGHT;
 
     always_ff @(posedge clk) begin
         if (rst) begin
@@ -113,6 +116,21 @@ module trex (
                             update_jump();
                         end
                     end
+                    DROPPING: begin
+                        if (state == JUMPING) begin
+                            set_speed_drop();
+                        end else begin
+                            // Speed drop makes Trex fall faster.
+                            update_jump(SPEED_DROP_COEFFICIENT);
+                        end
+                    end
+                    CRASHED: begin
+                        // Crashed whilst ducking. Trex is standing up so needs
+                        // adjustment.
+                        if (state == DUCKING) begin
+                            x_pos <= x_pos + 1;
+                        end
+                    end
                 endcase
             end
         end
@@ -124,17 +142,26 @@ module trex (
                 next_state = jump ? RUNNING : WAITING;
             end
             RUNNING: begin
-                next_state = jump ? JUMPING : RUNNING;
+                next_state = jump ? JUMPING : duck ? DUCKING : RUNNING;
             end
             JUMPING: begin
-                next_state = y_pos + jump_velocity
-                    > $signed(GROUND_Y_POS)
-                    ? RUNNING
-                    : JUMPING;
+                if (y_pos + jump_velocity > $signed(GROUND_Y_POS)) begin
+                    next_state = RUNNING;
+                end else begin
+                    next_state = duck ? DROPPING : JUMPING;
+                end
+            end
+            DROPPING: begin
+                if (y_pos + jump_velocity * SPEED_DROP_COEFFICIENT
+                    > GROUND_Y_POS
+                ) begin
+                    next_state = RUNNING;
+                end else begin
+                    next_state = duck ? DROPPING : JUMPING;
+                end
             end
             DUCKING: begin
-                // Not implemented yet
-                next_state = RUNNING;
+                next_state = duck ? DUCKING : RUNNING;
             end
             CRASHED: begin
                 next_state = CRASHED;
@@ -144,15 +171,13 @@ module trex (
             end
         endcase
 
+        if (crash) begin
+            next_state = CRASHED;
+        end
+
         // Preserve state if not received update signal.
         if (!update) begin
             next_state = state;
-        end
-        
-        if (crash &&
-            (state == RUNNING || state == JUMPING || state == DUCKING)
-        ) begin
-            next_state = CRASHED;
         end
     end
 
@@ -188,14 +213,14 @@ module trex (
                     inside_range(timer, 50, 55)
                 ? RUNNING0 : RUNNING1;
             end
-            JUMPING: begin
+            JUMPING, DROPPING: begin
                 frame <= JUMPING0;
             end
             DUCKING: begin
                 frame <= inside_range(timer, 0, 10) ||
                     inside_range(timer, 20, 30) ||
                     inside_range(timer, 40, 50)
-                ? DUCKING0 : RUNNING1;
+                ? DUCKING0 : DUCKING1;
             end
             CRASHED: begin
                 frame <= CRASHED0;
@@ -218,19 +243,24 @@ module trex (
         end
     endtask
 
+    // Set the speed drop. Immediately cancels the current jump.
+    task set_speed_drop;
+        jump_velocity <= SPEED_DROP_VELOCITY;
+    endtask
+
     // Update frame for a jump.
-    task update_jump;
+    task update_jump(int coefficient = 1);
         if (gravity_counter + GRAVITY >= 10) begin
             gravity_counter <= gravity_counter + GRAVITY - 10;
             jump_velocity <= jump_velocity + 1;
-            y_pos <= y_pos + jump_velocity + 1;
+            y_pos <= y_pos + (jump_velocity + 1) * coefficient;
         end else begin
             gravity_counter <= gravity_counter + GRAVITY;
-            y_pos <= y_pos + jump_velocity;
+            y_pos <= y_pos + jump_velocity * coefficient;
         end
 
         // Minimum height has been reached.
-        if (y_pos < MIN_JUMP_HEIGHT) begin
+        if (y_pos < MIN_JUMP_HEIGHT || duck) begin
             reached_min_height = 1;
         end
 

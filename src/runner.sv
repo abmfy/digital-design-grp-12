@@ -203,6 +203,7 @@ module runner (
         .speed(speed / SPEED_SCALE),
 
         .jump(jumping),
+        .duck(ducking),
         .crash(state == CRASHED),
 
         .x_pos(trex_x_pos),
