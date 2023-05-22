@@ -1,5 +1,7 @@
 // Handles displaying the distance meter.
 package distance_meter_pkg;
+    typedef logic[3:0] distance_t[MAX_DISTANCE_UNITS];
+
     parameter GAME_WIDTH = 640;
     parameter SPEED_SCALE = 1024;
 
@@ -40,27 +42,33 @@ module distance_meter(
 
     input[14:0] speed,
 
-    output logic[3:0] digits[MAX_DISTANCE_UNITS],
+    output distance_t digits,
     output logic paint
 );
 
     logic[15:0] distance_counter;
-    logic[16:0] distance;
+    distance_t distance;
 
     logic achievement;
-    logic[16:0] achievement_distance;
+    logic[6:0] achievement_counter;
+    distance_t achievement_distance;
     logic[4:0] flash_timer;
     logic[2:0] flash_iterations;
+
+    assign digits = achievement ? achievement_distance : distance;
 
     always_ff @(posedge clk) begin
         if (rst) begin
             paint <= 1;
             distance_counter <= 0;
-            distance <= 0;
             achievement <= 0;
-            achievement_distance <= 0;
+            achievement_counter <= 0;
             flash_timer <= 0;
             flash_iterations <= 0;
+            for (int i = 0; i < MAX_DISTANCE_UNITS; i++) begin
+                distance[i] <= 0;
+                achievement_distance[i] <= 0;
+            end
         end else if (!speed) begin
             achievement <= 0;
             paint <= 1;
@@ -69,15 +77,25 @@ module distance_meter(
                 distance_counter <= distance_counter + speed;
             end else begin
                 distance_counter <= distance_counter + speed - COEFFICIENT;
-                if (distance + 1 < 10 ** MAX_DISTANCE_UNITS - 1) begin
-                    distance <= distance + 1;
-                end else begin
-                    distance <= 10 ** MAX_DISTANCE_UNITS - 1;
+
+                for (int i = 0; i < MAX_DISTANCE_UNITS; i++) begin
+                    // Didn't reach max distance, increment.
+                    if (distance[i] != 9) begin
+                        distance <= incr();
+
+                        if (achievement_counter == ACHIEVEMENT_DISTANCE) begin
+                            achievement_counter <= 1;
+                        end else begin
+                            achievement_counter <= achievement_counter + 1;
+                        end
+
+                        break;
+                    end
                 end
             end
 
             // Achievement unlocked.
-            if (distance && distance % ACHIEVEMENT_DISTANCE == 0) begin
+            if (achievement_counter == ACHIEVEMENT_DISTANCE) begin
                 achievement <= 1;
                 achievement_distance <= distance;
                 flash_iterations <= 0;
@@ -106,11 +124,20 @@ module distance_meter(
         end
     end
 
-    always_comb begin
-        for (int i = 0; i < MAX_DISTANCE_UNITS; i++) begin
-            digits[i] = (achievement ? achievement_distance : distance) /
-                (10 ** (MAX_DISTANCE_UNITS - i - 1)) % 10;
+    // Increments the distance digits.
+    function distance_t incr;
+        automatic distance_t digits = distance;
+
+        for (int i = MAX_DISTANCE_UNITS - 1; i >= 0; i--) begin
+            if (digits[i] == 9) begin
+                digits[i] = 0;
+            end else begin
+                digits[i] = digits[i] + 1;
+                break;
+            end
         end
-    end
+
+        return digits;
+    endfunction
 
 endmodule
