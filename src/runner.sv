@@ -45,15 +45,15 @@ package runner_pkg;
 
     parameter RENDER_SLOTS = 32;
     parameter int RENDER_INDEX[ELEMENT_TYPES] = '{
-        CACTUS_LARGE: 0,
-        CACTUS_SMALL: 0,
-        CLOUD: 7,
-        HORIZON: 13,
-        MOON: 15,
-        PTERODACTYL: 0,
-        TEXT_SPRITE: 16,
-        TREX: 29,
-        STAR: 30
+        CACTUS_LARGE: 11,
+        CACTUS_SMALL: 11,
+        CLOUD: 4,
+        HORIZON: 0,
+        MOON: 10,
+        PTERODACTYL: 11,
+        TEXT_SPRITE: 19,
+        TREX: 18,
+        STAR: 2
     };
 
     parameter ELEMENT_TYPES = 9;
@@ -94,7 +94,6 @@ package runner_pkg;
         CRASHED0: 440
     };
 
-    import obstacle_pkg::WIDTH;
     import obstacle_pkg::NONE_0;
     import obstacle_pkg::CACTUS_SMALL_0;
     import obstacle_pkg::CACTUS_LARGE_0;
@@ -223,7 +222,7 @@ module runner (
         .rst,
 
         .update,
-        .speed,
+        .speed(state == CRASHED ? 0 : speed),
 
         .digits(distance_meter_digits),
         .paint(distance_meter_paint)
@@ -397,6 +396,24 @@ module runner (
                 pos[RENDER_INDEX[element_type(obstacle_frame[i])] + i] = '{
                     obstacle_x_pos[i] * 2,
                     obstacle_y_pos[i] * 2
+                };
+            end
+        end
+
+        if (distance_meter_paint) begin
+            for (int i = 0; i < MAX_DISTANCE_UNITS; i++) begin
+                sprite[RENDER_INDEX[TEXT_SPRITE] + i] = '{
+                    SPRITE[TEXT_SPRITE][0]
+                        + distance_meter_digits[i]
+                        * distance_meter_pkg::WIDTH * 2,
+                    SPRITE[TEXT_SPRITE][1],
+                    distance_meter_pkg::WIDTH * 2,
+                    distance_meter_pkg::HEIGHT * 2
+                };
+                pos[RENDER_INDEX[TEXT_SPRITE] + i] = '{
+                    distance_meter_pkg::X
+                        + i * distance_meter_pkg::DEST_WIDTH * 2,
+                    distance_meter_pkg::Y
                 };
             end
         end

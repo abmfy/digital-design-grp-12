@@ -7,10 +7,6 @@ package distance_meter_pkg;
     parameter HEIGHT = 13;
     parameter DEST_WIDTH = 11;
 
-    // Y positioning of the digits in the sprite sheet.
-    // X position is always 0.
-    parameter int Y_POS[10] = '{0, 13, 27, 40, 53, 67, 80, 93, 107, 120};
-
     // Distance meter config.
 
     // Number of digits.
@@ -28,7 +24,8 @@ package distance_meter_pkg;
     // Flash iterations for achievement animation.
     parameter FLASH_ITERATONS = 3;
 
-    parameter X = GAME_WIDTH - (DEST_WIDTH * (MAX_DISTANCE_UNITS + 1));
+    parameter X = (GAME_WIDTH - (DEST_WIDTH * (MAX_DISTANCE_UNITS + 1))) * 2;
+    parameter Y = 20;
 
 endpackage
 
