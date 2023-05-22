@@ -18,7 +18,7 @@ package trex_pkg;
     parameter signed DROP_VELOCITY = -5;
     parameter HEIGHT = 47;
     parameter HEIGHT_DUCK  = 25;
-    parameter START_X_POS = 50;
+    parameter START_X_POS = 20;
     parameter WIDTH = 44;
     parameter WIDTH_DUCK = 59;
 
