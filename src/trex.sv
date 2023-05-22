@@ -46,7 +46,7 @@ package trex_pkg;
         '{9, 34, 15, 4}
     };
     
-    parameter collision_box_t COLLISION_BOX_DUCK = '{1, 18, 55, 25};
+    parameter collision_box_t COLLISION_BOX_DUCK = '{1, 18, 42, 25};
 
 endpackage
 
