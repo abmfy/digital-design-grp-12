@@ -1,18 +1,20 @@
 module sensor_sim;
-  logic clk = 0;
-  always #5 clk = ~clk;
+  logic clk_uart = 0;
+  always #2170 clk_uart = ~clk_uart;  // 460.8 KHz
   logic rst = 1;
   logic wireless_tx = 1;
 
+  wire wireless_rx;
   wire wireless_set;
   wire signed [15:0] acceleration = 0;
   wire signed [15:0] direction = 0;
 
   sensor sensor_inst (
-      .clk(clk),
+      .clk_uart(clk_uart),
       .rst(rst),
-      .wireless_tx(wireless_tx),
-      .wireless_set(wireless_set),
+      .wireless_tx,
+      .wireless_rx,
+      .wireless_set,
       .acceleration(acceleration),
       .direction(direction)
   );

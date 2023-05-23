@@ -98,52 +98,79 @@ module mod_top (
       .c0    (clk_33m)
   );
 
-  logic reset_btn_last;
-  always_ff @(posedge clk_33m) begin
-    reset_btn_last <= reset_btn;
-  end
+  wire clk_uart;
+  pll_uart pll_uart_inst (
+      .inclk0(clk_100m),
+      .c0    (clk_uart)
+  );
 
-  logic reset;
-
-  resetter resetter_inst (
+  wire reset_33m;
+  resetter resetter_33m (
       .clk(clk_33m),
-      .rst_in(reset_btn_last),
-      .rst_out(reset)
+      .reset_btn,
+      .rst_out(reset_33m)
+  );
+
+  wire reset_uart;
+  resetter resetter_uart (
+      .clk(clk_uart),
+      .reset_btn,
+      .rst_out(reset_uart)
   );
 
   wire [15:0] acceleration;
   wire [15:0] direction;
 
   sensor sensor_inst (
-      .clk(clk_100m),
-      .rst(reset_btn),
-      .wireless_tx(wireless_tx),
-      .wireless_rx(wireless_rx),
-      .wireless_set(wireless_set),
-      .acceleration(acceleration),
-      .direction(direction)
+      .clk_uart,
+      .rst(reset_uart),
+      .wireless_tx,
+      .wireless_rx,
+      .wireless_set,
+      .acceleration,
+      .direction
   );
 
-//   dpy_scan dpy_scan_inst (
-//       .clk    (clk_100m),
-//       .number ({acceleration, direction}),
-//       .dp     (7'b0),
-//       .digit  (dpy_digit),
-//       .segment(dpy_segment)
-//   );
+  //   dpy_scan dpy_scan_inst (
+  //       .clk    (clk_100m),
+  //       .number ({acceleration, direction}),
+  //       .dp     (7'b0),
+  //       .digit  (dpy_digit),
+  //       .segment(dpy_segment)
+  //   );
 
-  wire jumping;
-  wire ducking;
-
+  wire jumping_uart;
+  wire ducking_uart;
   motion_detector motion_detector_inst (
       .acceleration(acceleration),
       .direction(direction),
-      .jumping(jumping),
-      .ducking(ducking)
+      .jumping(jumping_uart),
+      .ducking(ducking_uart)
   );
 
-//   assign leds[15] = jumping;
-//   assign leds[0] = ducking;
+  wire jumping_33m;
+  wire ducking_33m;
+  ram_cross_domain cross_domain_jumping (
+      .wrclock(clk_uart),
+      .wraddress(0),
+      .data(jumping_uart),
+      .wren(1),
+      .rdclock(clk_33m),
+      .rdaddress(0),
+      .q(jumping_33m)
+  );
+  ram_cross_domain cross_domain_ducking (
+      .wrclock(clk_uart),
+      .wraddress(0),
+      .data(ducking_uart),
+      .wren(1),
+      .rdclock(clk_33m),
+      .rdaddress(0),
+      .q(ducking_33m)
+  );
+
+  //   assign leds[15] = jumping_33m;
+  //   assign leds[0] = ducking_33m;
 
   wire [11:0] write_x;
   wire [11:0] write_y;
@@ -151,12 +178,12 @@ module mod_top (
   wire rst_screen_33m;
 
   vga vga_inst (
-      .clk_vga(clk_vga),
-      .clk_33m(clk_33m),
-      .write_x(write_x),
-      .write_y(write_y),
-      .write_palette(write_palette),
-      .rst_screen_33m(rst_screen_33m),
+      .clk_vga,
+      .clk_33m,
+      .write_x,
+      .write_y,
+      .write_palette,
+      .rst_screen_33m,
       .hsync(video_hsync),
       .vsync(video_vsync),
       .data_enable(video_de),
@@ -165,13 +192,13 @@ module mod_top (
       .output_blue(video_blue)
   );
 
-//   paint_demo paint_demo_inst (
-//       .clk_33m(clk_33m),
-//       .rst(rst_screen_33m),
-//       .write_x(write_x),
-//       .write_y(write_y),
-//       .write_palette(write_palette)
-//   );
+  //   paint_demo paint_demo_inst (
+  //       .clk_33m(clk_33m),
+  //       .rst(rst_screen_33m),
+  //       .write_x(write_x),
+  //       .write_y(write_y),
+  //       .write_palette(write_palette)
+  //   );
 
   runner_pkg::sprite_t sprite[RENDER_SLOTS];
   runner_pkg::pos_t pos[RENDER_SLOTS];
@@ -192,16 +219,16 @@ module mod_top (
       .finished(painter_finished)
   );
 
-  logic[14:0] speed;
+  logic [14:0] speed;
 
   runner runner_inst (
       .clk(clk_33m),
-      .rst(reset),
+      .rst(reset_33m),
 
       .speed,
 
-      .jumping(clock_btn),
-      .ducking(!touch_btn[2]),
+      .jumping(jumping_33m),
+      .ducking(ducking_33m),
 
       .painter_finished,
 
@@ -212,19 +239,29 @@ module mod_top (
   );
 
   dpy_scan dpy_scan_inst (
-    .clk(clk_33m),
-    .number(speed),
-    .dp(0),
+      .clk(clk_33m),
+      .number({acceleration, direction}),
+      .dp(0),
 
-    .digit(dpy_digit),
-    .segment(dpy_segment)
+      .digit  (dpy_digit),
+      .segment(dpy_segment)
   );
 
   always_comb begin
     for (int i = 0; i < RENDER_SLOTS; i++) begin
-        leds[i] = sprite[i].w != 0;
+      leds[i] = sprite[i].w != 0;
     end
   end
 
-//   assign leds[31:1] = 32'b01010101010101010101010101010101;
+  // assign leds[31:7] = '1;
+  // assign leds[6:0] = {
+  //     obstacle_start[6],
+  //     obstacle_start[5],
+  //     obstacle_start[4],
+  //     obstacle_start[3],
+  //     obstacle_start[2],
+  //     obstacle_start[1],
+  //     obstacle_start[0]
+  // };
+  // assign leds[31:1] = 32'b01010101010101010101010101010101;
 endmodule

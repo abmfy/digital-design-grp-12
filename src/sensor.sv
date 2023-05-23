@@ -1,5 +1,5 @@
 module sensor (
-    input clk,
+    input clk_uart,
     input rst,
     input wireless_tx,
     output wireless_rx,
@@ -18,7 +18,7 @@ module sensor (
   wire [7:0] data;
   wire next_byte;
   async_receiver async_receiver_inst (
-      .clk(clk),
+      .clk_uart(clk_uart),
       .rst(rst),
       .rx(wireless_tx),  // rx is connected to tx
       .next_byte(next_byte),
@@ -31,7 +31,7 @@ module sensor (
   logic [15:0] acceleration_buffer;
   logic [15:0] direction_buffer;
 
-  always_ff @(posedge clk) begin
+  always_ff @(posedge clk_uart) begin
     if (rst) begin
       byte_index <= 0;
       acceleration <= 0;
