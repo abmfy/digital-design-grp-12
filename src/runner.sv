@@ -2,7 +2,8 @@ package runner_pkg;
     typedef enum {
         WAITING,
         RUNNING,
-        CRASHED
+        CRASHED,
+        RESTARTING
     } state_t;
 
     typedef enum {
@@ -157,7 +158,6 @@ module runner (
     state_t state, next_state;
 
     logic update;
-    logic[19:0] clk_counter;
 
     logic[5:0] timer;
     // logic[14:0] speed;
@@ -167,8 +167,11 @@ module runner (
     logic has_obstacles;
 
     logic start;
+    logic restart;
 
     logic crashed;
+
+    logic jumping_last;
 
     logic painter_finished_last;
 
@@ -196,7 +199,7 @@ module runner (
 
     trex trex_inst (
         .clk,
-        .rst,
+        .rst(rst || restart),
 
         .update,
         .timer,
@@ -220,7 +223,7 @@ module runner (
 
     distance_meter distance_meter_inst (
         .clk,
-        .rst,
+        .rst(rst || restart),
 
         .update,
         .speed(state == CRASHED ? 0 : speed),
@@ -243,7 +246,7 @@ module runner (
 
     horizon horizon_inst (
         .clk,
-        .rst,
+        .rst(rst || restart),
 
         .update,
         .timer,
@@ -283,7 +286,20 @@ module runner (
                 end
             end
             CRASHED: begin
-                next_state = CRASHED;
+                // Jump again after crash to restart.
+                if (jumping && !jumping_last) begin
+                    next_state = RESTARTING;
+                end else begin
+                    next_state = CRASHED;
+                end
+            end
+            RESTARTING: begin
+                // Return to waiting status after restart.
+                if (!jumping) begin
+                    next_state = WAITING;
+                end else begin
+                    next_state = RESTARTING;
+                end
             end
         endcase
     end
@@ -291,16 +307,20 @@ module runner (
     always_ff @(posedge clk) begin
         if (rst) begin
             state <= WAITING;
-            clk_counter <= 0;
             update <= 0;
             start <= 0;
+            restart <= 0;
             timer <= 0;
+            jumping_last <= 0;
             painter_finished_last <= 0;
             speed <= 0;
             clear_timer <= 0;
             has_obstacles <= 0;
             rng_load <= 1;
         end else begin
+            state <= next_state;
+
+            jumping_last <= jumping;
             painter_finished_last <= painter_finished;
 
             // Posedge of painter_finished, step game loop
@@ -315,22 +335,30 @@ module runner (
                 update <= 0;
             end
 
-            if (state == RUNNING && crashed) begin
-                state <= CRASHED;
+            if (next_state == RESTARTING) begin
+                restart <= 1;
+                reset();
             end else begin
-                state <= next_state;
-                
-                if (update && next_state == RUNNING) begin
-                    rng_load <= 0;
-                    if (state == WAITING) begin
-                        init();
-                    end else begin
-                        run();
-                    end
+                restart <= 0;
+            end
+            
+            if (update && next_state == RUNNING) begin
+                rng_load <= 0;
+                if (state == WAITING) begin
+                    init();
+                end else begin
+                    run();
                 end
             end
         end
     end
+
+    task reset;
+        start <= 0;
+        speed <= 0;
+        clear_timer <= 0;
+        has_obstacles <= 0;
+    endtask
 
     task init;
         start <= 1;
