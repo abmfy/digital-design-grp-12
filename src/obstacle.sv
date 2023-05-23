@@ -159,6 +159,9 @@ module obstacle (
 
     logic signed[20:0] x_pos_game;
 
+    collision_pkg::collision_box_t
+        collision_box_tmp[obstacle_pkg::COLLISION_BOX_COUNT];
+
     assign x_pos = x_pos_game / SPEED_SCALE;
 
     assign visible = x_pos + $signed(width) > 0;
@@ -220,8 +223,13 @@ module obstacle (
             speed_offset <= 0;
             gap <= 0;
             frame <= NONE_0;
+
+            for (int i = 0; i < COLLISION_BOX_COUNT; i++) begin
+                collision_box[i] = '{0, 0, 0, 0};
+            end
         end else begin
             state <= next_state;
+            collision_box <= collision_box_tmp;
 
             case (next_state)
                 INITING: begin
@@ -257,7 +265,7 @@ module obstacle (
         end
 
         for (int i = 0; i < COLLISION_BOX_COUNT; i++) begin
-            collision_box[i] = create_adjusted_collision_box(
+            collision_box_tmp[i] = create_adjusted_collision_box(
                 b[i],
                 x_pos, y_pos
             );
