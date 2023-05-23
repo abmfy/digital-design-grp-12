@@ -17,7 +17,7 @@ module vga #(
     FRAME_TOP = 250,
     FRAME_BOTTOM = 550,
     RAM_SIZE = (FRAME_RIGHT - FRAME_LEFT) * (FRAME_BOTTOM - FRAME_TOP),
-    BUFFER_WIDTH = 4
+    BUFFER_WIDTH = 5
 ) (
     input clk_33m,
     input clk_vga,
@@ -29,15 +29,15 @@ module vga #(
     output hsync,
     output vsync,
     output data_enable,
-    output [7:0] output_red,
-    output [7:0] output_green,
-    output [7:0] output_blue
+    output logic [7:0] output_red,
+    output logic [7:0] output_green,
+    output logic [7:0] output_blue
 );
   logic [COOR_WIDTH-1:0] buffer_x[BUFFER_WIDTH-1:0];
   logic [COOR_WIDTH-1:0] buffer_y[BUFFER_WIDTH-1:0];
 
-  wire [COOR_WIDTH-1:0] read_x;
-  wire [COOR_WIDTH-1:0] read_y;
+  wire  [COOR_WIDTH-1:0] read_x;
+  wire  [COOR_WIDTH-1:0] read_y;
   assign read_x = buffer_x[0];
   assign read_y = buffer_y[0];
 
@@ -130,9 +130,16 @@ module vga #(
       .green(read_green),
       .blue(read_blue)
   );
-  wire in_frame;
-  assign in_frame = output_x >= FRAME_LEFT && output_x < FRAME_RIGHT && output_y >= FRAME_TOP && output_y < FRAME_BOTTOM;
-  assign output_red = in_frame ? read_red : 0;
-  assign output_green = in_frame ? read_green : 0;
-  assign output_blue = in_frame ? read_blue : 0;
+
+  always_ff @(posedge clk_vga) begin
+    if (output_x >= FRAME_LEFT && output_x < FRAME_RIGHT && output_y >= FRAME_TOP && output_y < FRAME_BOTTOM) begin
+      output_red   <= read_red;
+      output_green <= read_green;
+      output_blue  <= read_blue;
+    end else begin
+      output_red   <= 0;
+      output_green <= 0;
+      output_blue  <= 0;
+    end
+  end
 endmodule
