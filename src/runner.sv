@@ -13,7 +13,9 @@ package runner_pkg;
         HORIZON,
         MOON,
         PTERODACTYL,
-        TEXT_SPRITE,
+        DISTANCE,
+        HIGH_SCORE,
+        GAME_OVER,
         TREX,
         STAR
     } element_t;
@@ -44,6 +46,8 @@ package runner_pkg;
 
     parameter ACCELERATION = 1;
 
+    parameter ELEMENT_TYPES = 11;
+
     parameter RENDER_SLOTS = 32;
     parameter int RENDER_INDEX[ELEMENT_TYPES] = '{
         CACTUS_LARGE: 11,
@@ -52,12 +56,13 @@ package runner_pkg;
         HORIZON: 0,
         MOON: 10,
         PTERODACTYL: 11,
-        TEXT_SPRITE: 19,
+        DISTANCE: 19,
+        HIGH_SCORE: 24,
+        // This slot is shared with the space in "HI XXXXX"
+        GAME_OVER: 26,
         TREX: 18,
         STAR: 2
     };
-
-    parameter ELEMENT_TYPES = 9;
 
     parameter GAME_WIDTH = 640;
     parameter GAME_HEIGHT = 150;
@@ -70,7 +75,9 @@ package runner_pkg;
         HORIZON: '{2, 104},
         MOON: '{954, 2},
         PTERODACTYL: '{260, 2},
-        TEXT_SPRITE: '{1294, 2},
+        DISTANCE: '{1294, 2},
+        HIGH_SCORE: '{1294, 2},
+        GAME_OVER: '{1294, 28},
         TREX: '{1678, 2},
         STAR: '{1276, 2}
     };
@@ -153,6 +160,7 @@ module runner (
 
     import collision_pkg::*;
     import distance_meter_pkg::MAX_DISTANCE_UNITS;
+    import distance_meter_pkg::MAX_HIGH_SCORE_UNITS;
     import horizon_pkg::MAX_OBSTACLES;
 
     state_t state, next_state;
@@ -219,16 +227,19 @@ module runner (
     );
 
     logic[3:0] distance_meter_digits[MAX_DISTANCE_UNITS];
+    logic[3:0] distance_meter_high_score[MAX_HIGH_SCORE_UNITS];
     logic distance_meter_paint;
 
     distance_meter distance_meter_inst (
         .clk,
-        .rst(rst || restart),
+        .rst(rst),
 
         .update,
+        .restart,
         .speed(state == CRASHED ? 0 : speed),
 
         .digits(distance_meter_digits),
+        .high_score(distance_meter_high_score),
         .paint(distance_meter_paint)
     );
 
@@ -405,6 +416,7 @@ module runner (
         end
 
         if (!rst) begin
+            // T-Rex
             sprite[RENDER_INDEX[TREX]] <= '{
                 SPRITE[TREX][0] + SPRITE_TREX_OFFSET[trex_frame],
                 SPRITE[TREX][1],
@@ -413,6 +425,7 @@ module runner (
             };
             pos[RENDER_INDEX[TREX]] <= '{trex_x_pos * 2, trex_y_pos * 2};
 
+            // Obstacles
             for (int i = 0; i < MAX_OBSTACLES; i++) begin
                 if (obstacle_start[i]
                     && obstacle_frame[i] != obstacle_pkg::NONE_0
@@ -434,22 +447,40 @@ module runner (
                 end
             end
 
+            // Distance meter
             if (distance_meter_paint) begin
                 for (int i = 0; i < MAX_DISTANCE_UNITS; i++) begin
-                    sprite[RENDER_INDEX[TEXT_SPRITE] + i] <= '{
-                        SPRITE[TEXT_SPRITE][0]
+                    sprite[RENDER_INDEX[DISTANCE] + i] <= '{
+                        SPRITE[DISTANCE][0]
                             + distance_meter_digits[i]
                             * distance_meter_pkg::WIDTH * 2,
-                        SPRITE[TEXT_SPRITE][1],
+                        SPRITE[DISTANCE][1],
                         distance_meter_pkg::WIDTH * 2,
                         distance_meter_pkg::HEIGHT * 2
                     };
-                    pos[RENDER_INDEX[TEXT_SPRITE] + i] <= '{
+                    pos[RENDER_INDEX[DISTANCE] + i] <= '{
                         distance_meter_pkg::X
                             + i * distance_meter_pkg::DEST_WIDTH * 2,
                         distance_meter_pkg::Y
                     };
                 end
+            end
+
+            // High score
+            for (int i = 0; i < MAX_HIGH_SCORE_UNITS; i++) begin
+                sprite[RENDER_INDEX[HIGH_SCORE] + i] <= '{
+                    SPRITE[HIGH_SCORE][0]
+                        + distance_meter_high_score[i]
+                        * distance_meter_pkg::WIDTH * 2,
+                    SPRITE[HIGH_SCORE][1],
+                    distance_meter_pkg::WIDTH * 2,
+                    distance_meter_pkg::HEIGHT * 2
+                };
+                pos[RENDER_INDEX[HIGH_SCORE] + i] <= '{
+                    distance_meter_pkg::HIGH_SCORE_X
+                        + i * distance_meter_pkg::DEST_WIDTH * 2,
+                    distance_meter_pkg::Y
+                };
             end
         end
     end
