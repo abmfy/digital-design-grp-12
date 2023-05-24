@@ -326,6 +326,7 @@ module runner (
             update <= 0;
             start <= 0;
             restart <= 0;
+            crashed <= 0;
             timer <= 0;
             jumping_last <= 0;
             painter_finished_last <= 0;
@@ -338,6 +339,8 @@ module runner (
 
             jumping_last <= jumping;
             painter_finished_last <= painter_finished;
+
+            crashed <= check_for_collision();
 
             // Posedge of painter_finished, step game loop
             if (painter_finished && !painter_finished_last) begin
@@ -393,14 +396,15 @@ module runner (
     endtask
 
     // Collision check.
-    always_comb begin
-        crashed = 0;
+    function logic check_for_collision;
+        automatic logic crashed = 0;
         for (int i = 0; i < TREX_BOX_COUNT; i++) begin
             for (int j = 0; j < OBSTACLE_BOX_COUNT; j++) begin
                 crashed |= box_compare(trex_box[i], obstacle_box[j]);
             end
         end
-    end
+        return crashed;
+    endfunction
 
     // Get the corresponding sprite type for a obstacle frame.
     function element_t element_type(obstacle_pkg::frame_t frame);

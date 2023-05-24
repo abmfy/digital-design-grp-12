@@ -154,6 +154,9 @@ module horizon (
         end else begin
             state <= next_state;
 
+            // Collision box for the leftmost obstacle.
+            collision_box <= obstacle_box[obstacle_front];
+
             case (next_state)
                 RUNNING: begin
                     obstacle_update <= 0;
@@ -170,9 +173,6 @@ module horizon (
             endcase
         end
     end
-
-    // Collision box for the leftmost obstacle.
-    assign collision_box = obstacle_box[obstacle_front];
 
     // Mod increment.
     function logic[2:0] incr(logic[2:0] x);

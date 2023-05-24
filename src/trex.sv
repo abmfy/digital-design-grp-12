@@ -86,6 +86,9 @@ module trex (
 
     logic reached_min_height;
 
+    collision_pkg::collision_box_t
+        collision_box_tmp[trex_pkg::COLLISION_BOX_COUNT];
+
     assign width = state == DUCKING ? WIDTH_DUCK : WIDTH;
     assign height = HEIGHT;
 
@@ -98,10 +101,15 @@ module trex (
             jump_velocity <= 0;
             gravity_counter <= 0;
             reached_min_height <= 0;
+            for (int i = 0; i < COLLISION_BOX_COUNT; i++) begin
+                collision_box[i] <= '{0, 0, 0, 0};
+            end
         end else begin
             state <= next_state;
 
             update_frame();
+
+            collision_box <= collision_box_tmp;
 
             if (update) begin
                 case (next_state)
@@ -183,7 +191,7 @@ module trex (
 
     always_comb begin
         for (int i = 0; i < COLLISION_BOX_COUNT; i++) begin
-            collision_box[i] = create_adjusted_collision_box(
+            collision_box_tmp[i] = create_adjusted_collision_box(
                 state != DUCKING ? COLLISION_BOX[i] : COLLISION_BOX_DUCK,
                 x_pos,
                 y_pos
