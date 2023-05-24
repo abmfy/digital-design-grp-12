@@ -103,12 +103,20 @@ module mod_top (
     reset_btn_last <= reset_btn;
   end
 
+  logic reset;
+
+  resetter resetter_inst (
+      .clk(clk_33m),
+      .rst_in(reset_btn_last),
+      .rst_out(reset)
+  );
+
   wire [15:0] acceleration;
   wire [15:0] direction;
 
   sensor sensor_inst (
       .clk(clk_100m),
-      .rst(reset_btn_last),
+      .rst(reset_btn),
       .wireless_tx(wireless_tx),
       .wireless_rx(wireless_rx),
       .wireless_set(wireless_set),
@@ -188,7 +196,7 @@ module mod_top (
 
   runner runner_inst (
       .clk(clk_33m),
-      .rst(reset_btn_last),
+      .rst(reset),
 
       .speed,
 
@@ -218,15 +226,5 @@ module mod_top (
     end
   end
 
-    // assign leds[31:7] = '1;
-    // assign leds[6:0] = {
-    //     obstacle_start[6],
-    //     obstacle_start[5],
-    //     obstacle_start[4],
-    //     obstacle_start[3],
-    //     obstacle_start[2],
-    //     obstacle_start[1],
-    //     obstacle_start[0]
-    // };
 //   assign leds[31:1] = 32'b01010101010101010101010101010101;
 endmodule
