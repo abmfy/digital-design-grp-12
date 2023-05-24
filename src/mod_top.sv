@@ -98,12 +98,17 @@ module mod_top (
       .c0    (clk_33m)
   );
 
+  logic reset_btn_last;
+  always_ff @(posedge clk_33m) begin
+    reset_btn_last <= reset_btn;
+  end
+
   wire [15:0] acceleration;
   wire [15:0] direction;
 
   sensor sensor_inst (
       .clk(clk_100m),
-      .rst(reset_btn),
+      .rst(reset_btn_last),
       .wireless_tx(wireless_tx),
       .wireless_rx(wireless_rx),
       .wireless_set(wireless_set),
@@ -183,7 +188,7 @@ module mod_top (
 
   runner runner_inst (
       .clk(clk_33m),
-      .rst(reset_btn),
+      .rst(reset_btn_last),
 
       .speed,
 
