@@ -130,6 +130,11 @@ package runner_pkg;
         }
     };
 
+    parameter GAME_OVER_WIDTH = 191;
+    parameter GAME_OVER_HEIGHT = 11;
+    parameter GAME_OVER_X = GAME_WIDTH / 2 - GAME_OVER_WIDTH / 2;
+    parameter GAME_OVER_Y = (GAME_HEIGHT - 25) / 3;
+
     parameter TREX_BOX_COUNT = trex_pkg::COLLISION_BOX_COUNT;
     parameter OBSTACLE_BOX_COUNT = obstacle_pkg::COLLISION_BOX_COUNT;
 
@@ -480,6 +485,20 @@ module runner (
                     distance_meter_pkg::HIGH_SCORE_X
                         + i * distance_meter_pkg::DEST_WIDTH * 2,
                     distance_meter_pkg::Y
+                };
+            end
+
+            // Game over panel
+            if (state == CRASHED) begin
+                sprite[RENDER_INDEX[GAME_OVER]] <= '{
+                    SPRITE[GAME_OVER][0],
+                    SPRITE[GAME_OVER][1],
+                    GAME_OVER_WIDTH * 2,
+                    GAME_OVER_HEIGHT * 2
+                };
+                pos[RENDER_INDEX[GAME_OVER]] <= '{
+                    GAME_OVER_X * 2,
+                    GAME_OVER_Y * 2
                 };
             end
         end
