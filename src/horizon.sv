@@ -2,15 +2,15 @@ package horizon_pkg;
     typedef enum { 
         WAITING,
         RUNNING,
+        UPDATE_CLOUDS_0,
+        UPDATE_CLOUDS_1,
+        UPDATE_CLOUDS_2,
         UPDATE_OBSTACLES_0,
         UPDATE_OBSTACLES_1,
         UPDATE_OBSTACLES_2,
         CRASHED
     } state_t;
 
-    parameter BG_CLOUD_SPEED_INV = 5;
-    parameter CLOUD_FREQUENCY_INV = 2;
-    parameter HORIZON_HEIGHT = 16;
     parameter MAX_CLOUDS = 6;
 
     parameter MAX_OBSTACLES = 7;
@@ -45,6 +45,11 @@ module horizon (
 
     output logic horizon_line_bump[2],
 
+    output logic cloud_start[MAX_CLOUDS],
+
+    output logic signed[10:0] cloud_x_pos[MAX_CLOUDS],
+    output logic[9:0] cloud_y_pos[MAX_CLOUDS],
+
     output logic obstacle_start[MAX_OBSTACLES],
 
     output logic signed[10:0] obstacle_x_pos[MAX_OBSTACLES],
@@ -59,6 +64,12 @@ module horizon (
         collision_box[obstacle_pkg::COLLISION_BOX_COUNT]
 );
     import horizon_pkg::*;
+
+    import cloud_pkg::MIN_SKY_LEVEL;
+    import cloud_pkg::MAX_SKY_LEVEL;
+    import cloud_pkg::MIN_CLOUD_GAP;
+    import cloud_pkg::MAX_CLOUD_GAP;
+
     import obstacle_pkg::MAX_OBSTACLE_LENGTH;
     import obstacle_pkg::MIN_SPEED;
 
@@ -84,6 +95,59 @@ module horizon (
 
         .bump(horizon_line_bump)
     );
+
+    // Cloud queue.
+    logic[2:0] cloud_front;
+    logic[2:0] cloud_back;
+
+    logic cloud_update;
+
+    logic cloud_remove[MAX_CLOUDS];
+    logic[10:0] cloud_gap[MAX_CLOUDS];
+    logic cloud_visible[MAX_CLOUDS];
+
+    // Random number for cloud level and gap.
+    logic[9:0] cloud_level_rand;
+    logic[10:0] cloud_gap_rand;
+
+    div div_cloud_level (
+        .clock(clk),
+        .numer(rng_data),
+        .denom(MIN_SKY_LEVEL - MAX_SKY_LEVEL),
+        .remain(cloud_level_rand)
+    );
+    div div_gap_level (
+        .clock(clk),
+        .numer(rng_data),
+        .denom(MAX_CLOUD_GAP - MIN_CLOUD_GAP),
+        .remain(cloud_gap_rand)
+    );
+
+    genvar i0;
+    generate
+        for (i0 = 0; i0 < MAX_CLOUDS; i0++) begin: clouds
+            cloud cloud_inst (
+                .clk,
+                .rst,
+
+                .update(cloud_update),
+                .speed,
+
+                .start(cloud_start[i0]),
+                .crash,
+
+                .level_rand(cloud_level_rand),
+                .gap_rand(cloud_gap_rand),
+
+                .remove(cloud_remove[i0]),
+                .gap(cloud_gap[i0]),
+                .visible(cloud_visible[i0]),
+
+                .x_pos(cloud_x_pos[i0]),
+                .y_pos(cloud_y_pos[i0])
+            );
+        end
+    endgenerate
 
     // Obstacle queue.
     logic[2:0] obstacle_front;
@@ -142,8 +206,17 @@ module horizon (
                 if (crash) begin
                     next_state = CRASHED;
                 end else begin
-                    next_state = update ? UPDATE_OBSTACLES_0 : RUNNING;
+                    next_state = update ? UPDATE_CLOUDS_0 : RUNNING;
                 end
+            end
+            UPDATE_CLOUDS_0: begin
+                next_state = UPDATE_CLOUDS_1;
+            end
+            UPDATE_CLOUDS_1: begin
+                next_state = UPDATE_CLOUDS_2;
+            end
+            UPDATE_CLOUDS_2: begin
+                next_state = UPDATE_OBSTACLES_0;
             end
             UPDATE_OBSTACLES_0: begin
                 next_state = UPDATE_OBSTACLES_1;
@@ -166,6 +239,12 @@ module horizon (
     always_ff @(posedge clk) begin
         if (rst) begin
             state <= WAITING;
+            cloud_update <= 0;
+            cloud_front <= 0;
+            cloud_back <= 0;
+            for (int i = 0; i < MAX_CLOUDS; i++) begin
+                cloud_start[i] <= 0;
+            end
             obstacle_update <= 0;
             obstacle_front <= 0;
             obstacle_back <= 0;
@@ -183,6 +262,15 @@ module horizon (
                 RUNNING: begin
                     obstacle_update <= 0;
                 end
+                UPDATE_CLOUDS_0: begin
+                    update_clouds_0();
+                end
+                UPDATE_CLOUDS_1: begin
+                    update_clouds_1();
+                end
+                UPDATE_CLOUDS_2: begin
+                    update_clouds_2();
+                end
                 UPDATE_OBSTACLES_0: begin
                     update_obstacles_0();
                 end
@@ -197,19 +285,57 @@ module horizon (
     end
 
     // Mod increment.
-    function logic[2:0] incr(logic[2:0] x);
-        return x + 1 >= MAX_OBSTACLES ? 0 : x + 1;
+    function logic[2:0] incr(logic[2:0] x, int size);
+        return x + 1 >= size ? 0 : x + 1;
     endfunction
 
     // Mod decrement.
-    function logic[2:0] decr(logic[2:0] x);
-        return !x ? MAX_OBSTACLES - 1 : x - 1;
+    function logic[2:0] decr(logic[2:0] x, int size);
+        return !x ? size - 1 : x - 1;
     endfunction
 
-    // Last element in the queue.
-    function logic[2:0] last;
-        return decr(obstacle_back);
+    // Last element in the clouds queue.
+    function logic[2:0] last_cloud;
+        return decr(cloud_back, MAX_CLOUDS);
     endfunction
+
+    // Last element in the obstacle queue.
+    function logic[2:0] last_obstacle;
+        return decr(obstacle_back, MAX_OBSTACLES);
+    endfunction
+
+    // Update existing clouds and create new ones.
+    task update_clouds_0;
+        cloud_update <= 1;
+        if (cloud_front == cloud_back) begin
+            add_new_cloud();
+        end else begin
+            // Add new cloud if gap is large enough.
+            // Cloud frequency slightly controled.
+            if (rng_data[0]
+                && cloud_visible[last_cloud()] && 15'sb0
+                + cloud_x_pos[last_cloud()]
+                + $signed(cloud_pkg::WIDTH)
+                + $signed(12'(cloud_gap[last_cloud()]))
+                < $signed(GAME_WIDTH)
+            ) begin
+                add_new_cloud();
+            end
+        end
+    endtask
+
+    // Wait for clouds to be updated.
+    task update_clouds_1;
+        cloud_update <= 0;
+    endtask
+
+    // Remove invisible clouds.
+    task update_clouds_2;
+        if (cloud_remove[cloud_front]) begin
+            cloud_front <= incr(cloud_front, MAX_CLOUDS);
+            cloud_start[cloud_front] <= 0;
+        end
+    endtask
 
     // Update existing obstacles and create new ones.
     task update_obstacles_0;
@@ -220,11 +346,11 @@ module horizon (
             end
         end else begin
             // Add new obstacle if gap is large enough. 
-            if (obstacle_visible[last()] &&
-                15'sb0 + 
-                obstacle_x_pos[last()] +
-                $signed(obstacle_width[last()]) +
-                $signed(12'(obstacle_gap[last()])) < $signed(GAME_WIDTH)
+            if (obstacle_visible[last_obstacle()] && 15'sb0
+                + obstacle_x_pos[last_obstacle()]
+                + $signed(obstacle_width[last_obstacle()])
+                + $signed(12'(obstacle_gap[last_obstacle()]))
+                < $signed(GAME_WIDTH)
             ) begin
                 add_new_obstacle();
             end
@@ -239,18 +365,24 @@ module horizon (
     // Remove invisible obstacles.
     task update_obstacles_2;
         if (obstacle_remove[obstacle_front]) begin
-            obstacle_front <= incr(obstacle_front);
+            obstacle_front <= incr(obstacle_front, MAX_OBSTACLES);
             obstacle_start[obstacle_front] <= 0;
         end
+    endtask
+
+    // Add a new cloud to the queue.
+    task add_new_cloud;
+        cloud_back <= incr(cloud_back, MAX_CLOUDS);
+        cloud_start[cloud_back] <= 1;
     endtask
 
     // Returns whether the previous two obstacles are the same as the next one.
     function logic duplicate_obstacle_check(obstacle_t typ);
         automatic int duplicate_count = 0;
-        automatic int now = last();
+        automatic int now = last_obstacle();
         for (int i = 0;
              i < MAX_OBSTACLE_DUPLICATION;
-             i++, now = decr(now)
+             i++, now = decr(now, MAX_OBSTACLES)
         ) begin
             if (obstacle_type[now] == typ) begin
                 duplicate_count++;
@@ -278,7 +410,7 @@ module horizon (
 
     // Add a new obstacle to the queue.
     task add_new_obstacle;
-        obstacle_back <= incr(obstacle_back);
+        obstacle_back <= incr(obstacle_back, MAX_OBSTACLES);
         obstacle_type[obstacle_back] <= new_obstacle_type();
         obstacle_start[obstacle_back] <= 1;
     endtask

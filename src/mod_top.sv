@@ -131,14 +131,6 @@ module mod_top (
       .direction
   );
 
-  //   dpy_scan dpy_scan_inst (
-  //       .clk    (clk_100m),
-  //       .number ({acceleration, direction}),
-  //       .dp     (7'b0),
-  //       .digit  (dpy_digit),
-  //       .segment(dpy_segment)
-  //   );
-
   wire jumping_uart;
   wire ducking_uart;
   motion_detector motion_detector_inst (
@@ -169,9 +161,6 @@ module mod_top (
       .q(ducking_33m)
   );
 
-  //   assign leds[15] = jumping_33m;
-  //   assign leds[0] = ducking_33m;
-
   wire [11:0] write_x;
   wire [11:0] write_y;
   wire [1:0] write_palette;
@@ -192,14 +181,6 @@ module mod_top (
       .output_blue(video_blue)
   );
 
-  //   paint_demo paint_demo_inst (
-  //       .clk_33m(clk_33m),
-  //       .rst(rst_screen_33m),
-  //       .write_x(write_x),
-  //       .write_y(write_y),
-  //       .write_palette(write_palette)
-  //   );
-
   runner_pkg::sprite_t sprite[RENDER_SLOTS];
   runner_pkg::pos_t pos[RENDER_SLOTS];
 
@@ -219,20 +200,18 @@ module mod_top (
       .finished(painter_finished)
   );
 
-  logic [14:0] speed;
+  bit[10:0] rng_data;
 
   runner runner_inst (
       .clk(clk_33m),
       .rst(reset_33m),
-
-      .speed,
 
       .jumping(dip_sw[15] && jumping_33m || clock_btn),
       .ducking(dip_sw[15] && ducking_33m || !touch_btn[2]),
 
       .painter_finished,
 
-      .random_seed(dip_sw[10:0]),
+      .random_seed(dip_sw[11:1]),
 
       .sprite,
       .pos
@@ -252,16 +231,4 @@ module mod_top (
       leds[i] = sprite[i].w != 0;
     end
   end
-
-  // assign leds[31:7] = '1;
-  // assign leds[6:0] = {
-  //     obstacle_start[6],
-  //     obstacle_start[5],
-  //     obstacle_start[4],
-  //     obstacle_start[3],
-  //     obstacle_start[2],
-  //     obstacle_start[1],
-  //     obstacle_start[0]
-  // };
-  // assign leds[31:1] = 32'b01010101010101010101010101010101;
 endmodule

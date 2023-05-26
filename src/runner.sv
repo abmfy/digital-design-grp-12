@@ -157,9 +157,6 @@ module runner (
 
     input[10:0] random_seed,
 
-    // DEBUG
-    output logic[14:0] speed,
-
     output sprite_t sprite[RENDER_SLOTS],
     output pos_t pos[RENDER_SLOTS]
 );
@@ -168,6 +165,7 @@ module runner (
     import collision_pkg::*;
     import distance_meter_pkg::MAX_DISTANCE_UNITS;
     import distance_meter_pkg::MAX_HIGH_SCORE_UNITS;
+    import horizon_pkg::MAX_CLOUDS;
     import horizon_pkg::MAX_OBSTACLES;
 
     state_t state, next_state;
@@ -175,7 +173,7 @@ module runner (
     logic update;
 
     logic[5:0] timer;
-    // logic[14:0] speed;
+    logic[14:0] speed;
 
     // Generate obstacles only after CLEAR_TIME.
     logic[7:0] clear_timer;
@@ -254,6 +252,11 @@ module runner (
 
     logic horizon_line_bump[2];
 
+    logic cloud_start[MAX_CLOUDS];
+
+    logic signed[10:0] cloud_x_pos[MAX_CLOUDS];
+    logic[9:0] cloud_y_pos[MAX_CLOUDS];
+
     logic obstacle_start[MAX_OBSTACLES];
 
     logic signed[10:0] obstacle_x_pos[MAX_OBSTACLES];
@@ -285,6 +288,11 @@ module runner (
         .horizon_line_x_pos,
 
         .horizon_line_bump,
+
+        .cloud_start,
+
+        .cloud_x_pos,
+        .cloud_y_pos,
 
         .obstacle_start,
 
@@ -458,6 +466,22 @@ module runner (
                     horizon_line_x_pos[i] * 2,
                     horizon_line_pkg::Y_POS * 2
                 };
+            end
+
+            // Clouds
+            for (int i = 0; i < MAX_CLOUDS; i++) begin
+                if (cloud_start[i]) begin
+                    sprite[RENDER_INDEX[CLOUD] + i] <= '{
+                        SPRITE[CLOUD][0],
+                        SPRITE[CLOUD][1],
+                        cloud_pkg::WIDTH * 2,
+                        cloud_pkg::HEIGHT * 2
+                    };
+                    pos[RENDER_INDEX[CLOUD] + i] <= '{
+                        cloud_x_pos[i] * 2,
+                        cloud_y_pos[i] * 2
+                    };
+                end
             end
 
             // Obstacles
