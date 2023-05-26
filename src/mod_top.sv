@@ -200,8 +200,8 @@ module mod_top (
 
       .speed,
 
-      .jumping(clock_btn),
-      .ducking(!touch_btn[2]),
+      .jumping(dip_sw[15] && jumping || clock_btn),
+      .ducking(dip_sw[15] && ducking || !touch_btn[2]),
 
       .painter_finished,
 
