@@ -102,6 +102,8 @@ package runner_pkg;
         CRASHED0: 440
     };
 
+    parameter int SPRITE_HORIZON_LINE_OFFSET[2] = '{0, 1120};
+
     import obstacle_pkg::NONE_0;
     import obstacle_pkg::CACTUS_SMALL_0;
     import obstacle_pkg::CACTUS_LARGE_0;
@@ -248,6 +250,10 @@ module runner (
         .paint(distance_meter_paint)
     );
 
+    logic signed[10:0] horizon_line_x_pos[2];
+
+    logic horizon_line_bump[2];
+
     logic obstacle_start[MAX_OBSTACLES];
 
     logic signed[10:0] obstacle_x_pos[MAX_OBSTACLES];
@@ -275,6 +281,10 @@ module runner (
         .rng_data,
 
         .has_obstacles,
+
+        .horizon_line_x_pos,
+
+        .horizon_line_bump,
 
         .obstacle_start,
 
@@ -434,6 +444,21 @@ module runner (
                 trex_pkg::HEIGHT * 2
             };
             pos[RENDER_INDEX[TREX]] <= '{trex_x_pos * 2, trex_y_pos * 2};
+
+            // Horizon lines
+            for (int i = 0; i < 2; i++) begin
+                sprite[RENDER_INDEX[HORIZON] + i] <= '{
+                    SPRITE[HORIZON][0]
+                        + SPRITE_HORIZON_LINE_OFFSET[horizon_line_bump[i]],
+                    SPRITE[HORIZON][1],
+                    horizon_line_pkg::WIDTH * 2,
+                    horizon_line_pkg::HEIGHT * 2
+                };
+                pos[RENDER_INDEX[HORIZON] + i] <= '{
+                    horizon_line_x_pos[i] * 2,
+                    horizon_line_pkg::Y_POS * 2
+                };
+            end
 
             // Obstacles
             for (int i = 0; i < MAX_OBSTACLES; i++) begin

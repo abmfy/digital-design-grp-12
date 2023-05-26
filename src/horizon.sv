@@ -41,6 +41,10 @@ module horizon (
     // Enable obstacle generation.
     input has_obstacles,
 
+    output logic signed[10:0] horizon_line_x_pos[2],
+
+    output logic horizon_line_bump[2],
+
     output logic obstacle_start[MAX_OBSTACLES],
 
     output logic signed[10:0] obstacle_x_pos[MAX_OBSTACLES],
@@ -62,6 +66,24 @@ module horizon (
     typedef obstacle_pkg::frame_t obstacle_frame_t;
     
     state_t state, next_state;
+
+    // Horizon line.
+    horizon_line horizon_line_inst (
+        .clk,
+        .rst,
+
+        .update,
+        .speed,
+
+        .start,
+        .crash,
+
+        .rng_data,
+
+        .x_pos(horizon_line_x_pos),
+
+        .bump(horizon_line_bump)
+    );
 
     // Obstacle queue.
     logic[2:0] obstacle_front;
