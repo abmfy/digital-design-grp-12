@@ -64,6 +64,8 @@ module horizon_line (
             state <= WAITING;
             x_pos_game[0] <= 0;
             x_pos_game[1] <= WIDTH * SPEED_SCALE;
+            x_pos[0] <= 0;
+            x_pos[1] <= WIDTH;
             bump[0] <= 0;
             bump[1] <= 0;
         end else begin

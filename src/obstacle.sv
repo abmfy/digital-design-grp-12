@@ -162,8 +162,6 @@ module obstacle (
     collision_pkg::collision_box_t
         collision_box_tmp[obstacle_pkg::COLLISION_BOX_COUNT];
 
-    assign x_pos = x_pos_game / SPEED_SCALE;
-
     assign visible = x_pos + $signed(width) > 0;
 
     logic[10:0] min_gap;
@@ -214,6 +212,7 @@ module obstacle (
         if (rst) begin
             state <= WAITING;
             x_pos_game <= 0;
+            x_pos <= 0;
             y_pos <= 0;
             width <= 0;
             height <= 0;
@@ -281,6 +280,7 @@ module obstacle (
         height <= HEIGHT[typ];
         width <= get_width();
         x_pos_game <= GAME_WIDTH * SPEED_SCALE;
+        x_pos <= GAME_WIDTH;
         y_pos <= Y_POS[typ][timer < 20 ? 0 : timer < 40 ? 1 : 2];
 
         // For obstacles that go at a different speed from the horizon.
@@ -317,8 +317,13 @@ module obstacle (
         gap <= div_remain + min_gap;
     endtask
 
+    function logic signed[20:0] get_x_pos;
+        return x_pos_game - $signed(speed) + speed_offset;
+    endfunction
+
     task run;
-        x_pos_game <= x_pos_game - $signed(speed) + speed_offset;
+        x_pos_game <= get_x_pos();
+        x_pos <= get_x_pos() / SPEED_SCALE;
 
         if (NUM_FRAMES[typ]) begin
             if (typ == PTERODACTYL) begin
