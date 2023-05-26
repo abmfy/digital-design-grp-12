@@ -1,6 +1,5 @@
 module spike_filter (
     input clk,
-    input enable,
     input rst,
     input in,
     output logic out
@@ -14,7 +13,7 @@ module spike_filter (
     if (rst) begin
       for (integer i = 0; i < WIDTH; ++i) cnt[i] <= INITIAL_VALUE;
       out <= INITIAL_VALUE;
-    end else if (enable) begin
+    end else begin
       if (cnt == 0) out <= 0;
       else if (~in) cnt <= cnt - 1;
       if (&cnt) out <= 1;

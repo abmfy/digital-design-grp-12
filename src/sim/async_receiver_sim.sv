@@ -1,6 +1,6 @@
 module async_receiver_sim;
-  logic clk = 0;
-  always #5 clk = ~clk;
+  logic clk_uart = 0;
+  always #2170 clk_uart = ~clk_uart;  // 460.8 KHz
   logic rst = 1;
   logic rx = 1;
 
@@ -8,11 +8,11 @@ module async_receiver_sim;
   wire [7:0] data;
 
   async_receiver async_receiver_inst (
-      .clk(clk),
-      .rst(rst),
-      .rx(rx),
-      .next_byte(next_byte),
-      .data(data)
+      .clk_uart,
+      .rst,
+      .rx,
+      .next_byte,
+      .data
   );
 
   task receive_byte(input [7:0] d);
