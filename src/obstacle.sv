@@ -17,6 +17,7 @@ package obstacle_pkg;
     typedef enum {
         WAITING,
         INITING,
+        CALCING,
         RUNNING,
         UPDATING,
         CRASHED
@@ -130,7 +131,7 @@ module obstacle (
     input start,
     input crash,
 
-    input bit[10:0] rng_data,
+    input logic[10:0] div_remain,
 
     output logic remove,
     output logic[10:0] gap,
@@ -146,7 +147,9 @@ module obstacle (
     output obstacle_pkg::frame_t frame,
 
     output collision_pkg::collision_box_t
-        collision_box[obstacle_pkg::COLLISION_BOX_COUNT]
+        collision_box[obstacle_pkg::COLLISION_BOX_COUNT],
+
+    output logic[10:0] div_denom
 );  
     import obstacle_pkg::*;
 
@@ -167,14 +170,6 @@ module obstacle (
     logic[10:0] min_gap;
     assign min_gap = get_width() * (speed / SPEED_SCALE) + MIN_GAP[typ];
 
-    logic[10:0] div_denom, div_numer, div_remain;
-    div divider (
-        .clock(clk),
-        .denom(div_denom),
-        .numer(div_numer),
-        .remain(div_remain)
-    );
-
     always_comb begin
         next_state = state;
         case (state)
@@ -187,6 +182,9 @@ module obstacle (
             // which is time consuming, so we break this calculation into
             // two cycles to enhance timing.
             INITING: begin
+                next_state = CALCING;
+            end
+            CALCING: begin
                 next_state = RUNNING;
             end
             RUNNING: begin
@@ -244,7 +242,7 @@ module obstacle (
                     init();
                 end
                 RUNNING: begin
-                    if (state == INITING) begin
+                    if (state == CALCING) begin
                         update_gap();
                     end
                 end
@@ -317,7 +315,6 @@ module obstacle (
     // Calculate a random gap size.
     // Minimum gap gets wider as speed increases.
     task calc_gap;
-        div_numer <= rng_data;
         div_denom <= min_gap / 2;
     endtask
 

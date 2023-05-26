@@ -116,7 +116,7 @@ module horizon (
         .denom(MIN_SKY_LEVEL - MAX_SKY_LEVEL),
         .remain(cloud_level_rand)
     );
-    div div_gap_level (
+    div div_cloud_gap (
         .clock(clk),
         .numer(rng_data),
         .denom(MAX_CLOUD_GAP - MIN_CLOUD_GAP),
@@ -163,6 +163,17 @@ module horizon (
     collision_pkg::collision_box_t
         obstacle_box[MAX_OBSTACLES][obstacle_pkg::COLLISION_BOX_COUNT];
 
+    // Shared divider.
+    logic[10:0] div_obstacle_gap_denom[MAX_OBSTACLES];
+    logic[10:0] div_obstacle_gap_remain;
+
+    div div_obstacle_gap (
+        .clock(clk),
+        .numer(rng_data),
+        .denom(div_obstacle_gap_denom[last_obstacle()]),
+        .remain(div_obstacle_gap_remain)
+    );
+
     genvar i;
     generate
         for (i = 0; i < MAX_OBSTACLES; i++) begin: obstacles
@@ -178,7 +189,7 @@ module horizon (
                 .start(obstacle_start[i]),
                 .crash,
 
-                .rng_data,
+                .div_remain(div_obstacle_gap_remain),
                 
                 .remove(obstacle_remove[i]),
                 .gap(obstacle_gap[i]),
@@ -192,7 +203,9 @@ module horizon (
 
                 .frame(obstacle_frame[i]),
 
-                .collision_box(obstacle_box[i])
+                .collision_box(obstacle_box[i]),
+
+                .div_denom(div_obstacle_gap_denom[i])
             );
         end
     endgenerate
