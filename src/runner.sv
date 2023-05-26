@@ -418,8 +418,7 @@ module runner (
         automatic logic crashed = 0;
         for (int i = 0; i < TREX_BOX_COUNT; i++) begin
             for (int j = 0; j < OBSTACLE_BOX_COUNT; j++) begin
-                crashed |= obstacle_start[i]
-                    && box_compare(trex_box[i], obstacle_box[j]);
+                crashed |= box_compare(trex_box[i], obstacle_box[j]);
             end
         end
         return crashed;

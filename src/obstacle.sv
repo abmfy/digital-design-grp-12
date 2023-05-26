@@ -228,7 +228,16 @@ module obstacle (
             end
         end else begin
             state <= next_state;
-            collision_box <= collision_box_tmp;
+
+            // Only enable collision check when obstacle is visible.
+            if (state != WAITING) begin
+                collision_box <= collision_box_tmp;
+            end else begin
+                for (int i = 0; i < COLLISION_BOX_COUNT; i++) begin
+                    collision_box[i] <= '{0, 0, 0, 0};
+                end
+            end
+            
 
             case (next_state)
                 INITING: begin
