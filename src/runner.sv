@@ -196,7 +196,7 @@ module runner (
     ) prng_gap (
         .clk(clk),
         .load(rng_load),
-        .seed(random_seed),
+        .seed(random_seed + timer),
 
         .enable(1),
         .data_out(rng_data)
