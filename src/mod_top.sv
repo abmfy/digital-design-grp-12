@@ -206,8 +206,8 @@ module mod_top (
       .clk(clk_33m),
       .rst(reset_33m),
 
-      .jumping(dip_sw[15] && jumping_33m || clock_btn),
-      .ducking(dip_sw[15] && ducking_33m || !touch_btn[2]),
+      .jumping(dip_sw[15] ? jumping_33m : clock_btn),
+      .ducking(dip_sw[15] ? ducking_33m : ~touch_btn[3]),
 
       .painter_finished,
 
