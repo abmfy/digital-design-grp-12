@@ -17,7 +17,7 @@ module vga #(
     FRAME_TOP = 250,
     FRAME_BOTTOM = 550,
     RAM_SIZE = (FRAME_RIGHT - FRAME_LEFT) * (FRAME_BOTTOM - FRAME_TOP),
-    BUFFER_WIDTH = 5
+    BUFFER_WIDTH = 4
 ) (
     input clk_33m,
     input clk_vga,
@@ -26,9 +26,9 @@ module vga #(
     input [COOR_WIDTH-1:0] write_y,  // [0, 300)
     input [1:0] write_palette,
     output rst_screen_33m,  // refresh screen, swap RAM r/w parts
-    output hsync,
-    output vsync,
-    output data_enable,
+    output logic hsync,
+    output logic vsync,
+    output logic data_enable,
     output logic [7:0] output_red,
     output logic [7:0] output_green,
     output logic [7:0] output_blue
@@ -74,9 +74,11 @@ module vga #(
   );
 
   // VGA sync and enable signals
-  assign hsync = ((output_x >= HFP) && (output_x < HSP)) ? HSPP : !HSPP;
-  assign vsync = ((output_y >= VFP) && (output_y < VSP)) ? VSPP : !VSPP;
-  assign data_enable = ((output_x < HSIZE) & (output_y < VSIZE));
+  always_ff @(posedge clk_vga) begin
+    hsync <= ((output_x >= HFP) && (output_x < HSP)) ? HSPP : !HSPP;
+    vsync <= ((output_y >= VFP) && (output_y < VSP)) ? VSPP : !VSPP;
+    data_enable <= ((output_x < HSIZE) & (output_y < VSIZE));
+  end
 
   // partition of RAM
   logic read_part = 0;
