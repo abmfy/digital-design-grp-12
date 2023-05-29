@@ -165,6 +165,23 @@ module mod_top (
   wire [11:0] write_y;
   wire [1:0] write_palette;
   wire rst_screen_33m;
+  wire rst_screen_vga;
+
+  logic [7:0] night_rate = 255;
+  logic night_rate_increasing = 0;
+  logic last_rst_screen_vga;
+  always_ff @(posedge clk_vga) begin
+    last_rst_screen_vga <= rst_screen_vga;
+    if (~touch_btn[1] && rst_screen_vga && ~last_rst_screen_vga) begin
+      if (night_rate_increasing) begin
+        if (night_rate == 255) night_rate_increasing <= 0;
+        else night_rate <= night_rate + 5;
+      end else begin
+        if (night_rate == 0) night_rate_increasing <= 1;
+        else night_rate <= night_rate - 5;
+      end
+    end
+  end
 
   vga vga_inst (
       .clk_vga,
@@ -172,7 +189,9 @@ module mod_top (
       .write_x,
       .write_y,
       .write_palette,
+      .night_rate,
       .rst_screen_33m,
+      .rst_screen_vga,
       .hsync(video_hsync),
       .vsync(video_vsync),
       .data_enable(video_de),
@@ -200,7 +219,7 @@ module mod_top (
       .finished(painter_finished)
   );
 
-  bit[10:0] rng_data;
+  bit [10:0] rng_data;
 
   runner runner_inst (
       .clk(clk_33m),

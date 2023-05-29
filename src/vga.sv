@@ -17,7 +17,9 @@ module vga #(
     FRAME_TOP = 250,
     FRAME_BOTTOM = 550,
     RAM_SIZE = (FRAME_RIGHT - FRAME_LEFT) * (FRAME_BOTTOM - FRAME_TOP),
-    BUFFER_WIDTH = 4
+    BUFFER_WIDTH = 4,
+    NIGHT_RATE_WIDTH = 8,
+    MAX_NIGHT_RATE = (1 << NIGHT_RATE_WIDTH) - 1
 ) (
     input clk_33m,
     input clk_vga,
@@ -25,6 +27,8 @@ module vga #(
     input [COOR_WIDTH-1:0] write_x,  // [0, 1280)
     input [COOR_WIDTH-1:0] write_y,  // [0, 300)
     input [1:0] write_palette,
+    input [NIGHT_RATE_WIDTH-1:0] night_rate,
+    output rst_screen_vga,
     output rst_screen_33m,  // refresh screen, swap RAM r/w parts
     output logic hsync,
     output logic vsync,
@@ -61,7 +65,6 @@ module vga #(
   end
 
   // rst_screen
-  wire rst_screen_vga;
   assign rst_screen_vga = read_y == VSIZE && read_x < 16;
   ram_cross_domain cross_domain_rst_screen (
       .wrclock(clk_vga),
@@ -123,21 +126,45 @@ module vga #(
   );
 
   // get color from palette
-  wire [7:0] read_red;
-  wire [7:0] read_green;
-  wire [7:0] read_blue;
-  palette palette_inst (
-      .palette_index(read_palette),
-      .red(read_red),
-      .green(read_green),
-      .blue(read_blue)
-  );
+  wire [7:0] read_red  [0:MAX_NIGHT_RATE];
+  wire [7:0] read_green[0:MAX_NIGHT_RATE];
+  wire [7:0] read_blue [0:MAX_NIGHT_RATE];
+
+  genvar i;
+  generate
+    for (i = 0; i <= MAX_NIGHT_RATE; ++i) begin : palette_gen
+      palette #(
+          .MAX_NIGHT_RATE(MAX_NIGHT_RATE),
+          .NIGHT_RATE(i)
+      ) palette_inst (
+          .palette_index(read_palette),
+          .red(read_red[i]),
+          .green(read_green[i]),
+          .blue(read_blue[i])
+      );
+    end
+  endgenerate
 
   always_ff @(posedge clk_vga) begin
     if (output_x >= FRAME_LEFT && output_x < FRAME_RIGHT && output_y >= FRAME_TOP && output_y < FRAME_BOTTOM) begin
-      output_red   <= read_red;
-      output_green <= read_green;
-      output_blue  <= read_blue;
+      output_red   <= read_red[night_rate];
+      output_green <= read_green[night_rate];
+      output_blue  <= read_blue[night_rate];
+    end else if (output_x < HSIZE && output_y < VSIZE) begin
+      if (night_rate == 0) begin
+        output_red   <= 0;
+        output_green <= 0;
+        output_blue  <= 0;
+      end else
+      if (night_rate == MAX_NIGHT_RATE) begin
+        output_red   <= 255;
+        output_green <= 255;
+        output_blue  <= 255;
+      end else begin
+        output_red   <= night_rate << (8 - NIGHT_RATE_WIDTH);
+        output_green <= night_rate << (8 - NIGHT_RATE_WIDTH);
+        output_blue  <= night_rate << (8 - NIGHT_RATE_WIDTH);
+      end
     end else begin
       output_red   <= 0;
       output_green <= 0;
