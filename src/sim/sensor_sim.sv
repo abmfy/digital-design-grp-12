@@ -1,13 +1,13 @@
 module sensor_sim;
   logic clk_uart = 0;
-  always #2170 clk_uart = ~clk_uart;  // 460.8 KHz
+  always #1085 clk_uart = ~clk_uart;  // 460.8 KHz
   logic rst = 1;
   logic wireless_tx = 1;
 
   wire wireless_rx;
   wire wireless_set;
-  wire signed [15:0] acceleration = 0;
-  wire signed [15:0] direction = 0;
+  wire signed [15:0] acceleration;
+  wire signed [15:0] direction;
 
   sensor sensor_inst (
       .clk_uart(clk_uart),
@@ -49,7 +49,7 @@ module sensor_sim;
   endtask
 
   initial begin
-    #1000;
+    #10000;
     rst = 0;
 
     send_message(8'h51, {16'h0123, 16'h4567, 16'h89ab, 16'hcdef});

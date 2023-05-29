@@ -1,6 +1,6 @@
 module async_receiver_sim;
   logic clk_uart = 0;
-  always #2170 clk_uart = ~clk_uart;  // 460.8 KHz
+  always #1085 clk_uart = ~clk_uart;  // 460.8 KHz
   logic rst = 1;
   logic rx = 1;
 
@@ -29,7 +29,7 @@ module async_receiver_sim;
   endtask
 
   initial begin
-    #1000;
+    #10000;
     rst = 0;
 
     receive_byte(8'h55);
