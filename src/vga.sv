@@ -23,7 +23,7 @@ module vga #(
 ) (
     input clk_33m,
     input clk_vga,
-    // write inputs are in clk 100m
+    // write inputs are in clk 33m
     input [COOR_WIDTH-1:0] write_x,  // [0, 1280)
     input [COOR_WIDTH-1:0] write_y,  // [0, 300)
     input [1:0] write_palette,
