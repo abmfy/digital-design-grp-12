@@ -46,6 +46,13 @@ package runner_pkg;
 
     parameter ACCELERATION = 1;
 
+    parameter GAME_WIDTH = 640;
+    parameter GAME_HEIGHT = 150;
+
+    parameter INVERT_FADE_DURATION = 720;
+    parameter MAX_NIGHT_RATE = 255;
+    parameter NIGHT_RATE_DELTA = 5;
+
     parameter ELEMENT_TYPES = 11;
 
     parameter RENDER_SLOTS = 32;
@@ -63,9 +70,6 @@ package runner_pkg;
         TREX: 18,
         STAR: 2
     };
-
-    parameter GAME_WIDTH = 640;
-    parameter GAME_HEIGHT = 150;
 
     // (x, y)
     parameter int SPRITE[ELEMENT_TYPES][2] = '{
@@ -158,7 +162,9 @@ module runner (
     input[10:0] random_seed,
 
     output sprite_t sprite[RENDER_SLOTS],
-    output pos_t pos[RENDER_SLOTS]
+    output pos_t pos[RENDER_SLOTS],
+
+    output logic[7:0] night_rate
 );
     import runner_pkg::*;
 
@@ -185,6 +191,10 @@ module runner (
     logic crashed;
 
     logic jumping_last;
+
+    logic inverted;
+    logic invert_trigger;
+    logic[9:0] invert_timer;
 
     logic painter_finished_last;
 
@@ -245,7 +255,9 @@ module runner (
 
         .digits(distance_meter_digits),
         .high_score(distance_meter_high_score),
-        .paint(distance_meter_paint)
+        .paint(distance_meter_paint),
+
+        .invert_trigger
     );
 
     logic signed[10:0] horizon_line_x_pos[2];
@@ -352,6 +364,9 @@ module runner (
             clear_timer <= 0;
             has_obstacles <= 0;
             rng_load <= 1;
+            inverted <= 0;
+            invert_timer <= 0;
+            night_rate <= 0;
         end else begin
             state <= next_state;
 
@@ -359,6 +374,10 @@ module runner (
             painter_finished_last <= painter_finished;
 
             crashed <= check_for_collision();
+
+            if (update) begin
+                update_night_rate();
+            end
 
             // Posedge of painter_finished, step game loop
             if (painter_finished && !painter_finished_last) begin
@@ -390,11 +409,22 @@ module runner (
         end
     end
 
+    task update_night_rate;
+        // Update night rate.
+        if (inverted && night_rate < MAX_NIGHT_RATE) begin
+            night_rate <= night_rate + NIGHT_RATE_DELTA;
+        end else if (!inverted && night_rate > 0) begin
+            night_rate <= night_rate - NIGHT_RATE_DELTA;
+        end
+    endtask
+
     task reset;
         start <= 0;
         speed <= 0;
         clear_timer <= 0;
         has_obstacles <= 0;
+        inverted <= 0;
+        night_rate <= 0;
     endtask
 
     task init;
@@ -410,6 +440,16 @@ module runner (
 
         if (speed + ACCELERATION <= MAX_SPEED) begin
             speed <= speed + ACCELERATION;
+        end
+        
+        // Night mode trigger.
+        if (invert_timer == INVERT_FADE_DURATION) begin
+            invert_timer <= 0;
+            inverted <= 0;
+        end else if (inverted) begin
+            invert_timer <= invert_timer + 1;
+        end else if (invert_trigger) begin
+            inverted <= 1;
         end
     endtask
 

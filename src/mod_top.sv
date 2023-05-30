@@ -167,21 +167,23 @@ module mod_top (
   wire rst_screen_33m;
   wire rst_screen_vga;
 
-  logic [7:0] night_rate = 255;
-  logic night_rate_increasing = 0;
-  logic last_rst_screen_vga;
-  always_ff @(posedge clk_vga) begin
-    last_rst_screen_vga <= rst_screen_vga;
-    if (~touch_btn[1] && rst_screen_vga && ~last_rst_screen_vga) begin
-      if (night_rate_increasing) begin
-        if (night_rate == 255) night_rate_increasing <= 0;
-        else night_rate <= night_rate + 5;
-      end else begin
-        if (night_rate == 0) night_rate_increasing <= 1;
-        else night_rate <= night_rate - 5;
-      end
+  logic [7:0] night_rate;
+  logic [7:0] night_rate_vga;
+
+  genvar i;
+  generate
+    for (i = 0; i < 8; i++) begin: gen_night_rate
+      ram_cross_domain cross_domain_night_rate (
+        .wrclock(clk_33m),
+        .wraddress(0),
+        .data(night_rate[i]),
+        .wren(1),
+        .rdclock(clk_vga),
+        .rdaddress(0),
+        .q(night_rate_vga[i])
+      );
     end
-  end
+  endgenerate
 
   vga vga_inst (
       .clk_vga,
@@ -189,7 +191,7 @@ module mod_top (
       .write_x,
       .write_y,
       .write_palette,
-      .night_rate,
+      .night_rate(night_rate_vga),
       .rst_screen_33m,
       .rst_screen_vga,
       .hsync(video_hsync),
@@ -233,7 +235,9 @@ module mod_top (
       .random_seed(dip_sw[11:1]),
 
       .sprite,
-      .pos
+      .pos,
+      
+      .night_rate
   );
 
   dpy_scan dpy_scan_inst (
