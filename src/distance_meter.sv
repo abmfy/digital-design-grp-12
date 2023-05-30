@@ -30,6 +30,8 @@ package distance_meter_pkg;
     // Flash iterations for achievement animation.
     parameter FLASH_ITERATONS = 3;
 
+    parameter INVERT_DISTANCE = 700;
+
     parameter X = (GAME_WIDTH - (DEST_WIDTH * (MAX_DISTANCE_UNITS + 1))) * 2;
     parameter Y = 20;
 
@@ -51,7 +53,9 @@ module distance_meter(
 
     output distance_t digits,
     output logic[3:0] high_score[MAX_HIGH_SCORE_UNITS],
-    output logic paint
+    output logic paint,
+
+    output logic invert_trigger
 );
 
     logic[15:0] distance_counter;
@@ -65,6 +69,8 @@ module distance_meter(
 
     logic[16:0] distance_val;
     logic[16:0] high_score_val;
+
+    logic[9:0] invert_counter;
 
     assign digits = achievement ? achievement_distance : distance;
 
@@ -86,6 +92,8 @@ module distance_meter(
                 achievement_distance[i] <= 0;
             end
             distance_val <= 0;
+            invert_counter <= 0;
+            invert_trigger <= 0;
 
             if (rst) begin
                 high_score_val <= 0;
@@ -111,6 +119,15 @@ module distance_meter(
                 distance_counter <= distance_counter + speed - COEFFICIENT;
 
                 distance_val <= distance_val + 1;
+
+                // Trigger night mode.
+                if (invert_counter + 1 == INVERT_DISTANCE) begin
+                    invert_counter <= 0;
+                    invert_trigger <= 1;
+                end else begin
+                    invert_counter <= invert_counter + 1;
+                    invert_trigger <= 0;
+                end
 
                 for (int i = 0; i < MAX_DISTANCE_UNITS; i++) begin
                     // Didn't reach max distance, increment.

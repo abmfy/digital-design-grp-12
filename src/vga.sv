@@ -152,18 +152,18 @@ module vga #(
       output_blue  <= read_blue[night_rate];
     end else if (output_x < HSIZE && output_y < VSIZE) begin
       if (night_rate == 0) begin
-        output_red   <= 0;
-        output_green <= 0;
-        output_blue  <= 0;
-      end else
-      if (night_rate == MAX_NIGHT_RATE) begin
         output_red   <= 255;
         output_green <= 255;
         output_blue  <= 255;
+      end else
+      if (night_rate == MAX_NIGHT_RATE) begin
+        output_red   <= 0;
+        output_green <= 0;
+        output_blue  <= 0;
       end else begin
-        output_red   <= night_rate << (8 - NIGHT_RATE_WIDTH);
-        output_green <= night_rate << (8 - NIGHT_RATE_WIDTH);
-        output_blue  <= night_rate << (8 - NIGHT_RATE_WIDTH);
+        output_red   <= ('hff - night_rate) << (8 - NIGHT_RATE_WIDTH);
+        output_green <= ('hff - night_rate) << (8 - NIGHT_RATE_WIDTH);
+        output_blue  <= ('hff - night_rate) << (8 - NIGHT_RATE_WIDTH);
       end
     end else begin
       output_red   <= 0;

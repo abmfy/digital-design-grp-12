@@ -46,6 +46,13 @@ package runner_pkg;
 
     parameter ACCELERATION = 1;
 
+    parameter GAME_WIDTH = 640;
+    parameter GAME_HEIGHT = 150;
+
+    parameter INVERT_FADE_DURATION = 720;
+    parameter MAX_NIGHT_RATE = 255;
+    parameter NIGHT_RATE_DELTA = 5;
+
     parameter ELEMENT_TYPES = 11;
 
     parameter RENDER_SLOTS = 32;
@@ -63,9 +70,6 @@ package runner_pkg;
         TREX: 18,
         STAR: 2
     };
-
-    parameter GAME_WIDTH = 640;
-    parameter GAME_HEIGHT = 150;
 
     // (x, y)
     parameter int SPRITE[ELEMENT_TYPES][2] = '{
@@ -103,6 +107,12 @@ package runner_pkg;
     };
 
     parameter int SPRITE_HORIZON_LINE_OFFSET[2] = '{0, 1120};
+
+    import night_pkg::NUM_PHASES;
+
+    parameter int SPRITE_MOON_OFFSET[NUM_PHASES] = '{
+        280, 240, 200, 120, 80, 40, 0
+    };
 
     import obstacle_pkg::NONE_0;
     import obstacle_pkg::CACTUS_SMALL_0;
@@ -158,7 +168,9 @@ module runner (
     input[10:0] random_seed,
 
     output sprite_t sprite[RENDER_SLOTS],
-    output pos_t pos[RENDER_SLOTS]
+    output pos_t pos[RENDER_SLOTS],
+
+    output logic[7:0] night_rate
 );
     import runner_pkg::*;
 
@@ -186,10 +198,14 @@ module runner (
 
     logic jumping_last;
 
+    logic inverted;
+    logic invert_trigger;
+    logic[9:0] invert_timer;
+
     logic painter_finished_last;
 
     logic rng_load;
-    bit[10:0] rng_data;
+    bit[10:0] rng_data, rng_data2;
     lfsr_prng #(
         .DATA_WIDTH(11),
         .INVERT(0)
@@ -200,6 +216,17 @@ module runner (
 
         .enable(1),
         .data_out(rng_data)
+    );
+    lfsr_prng #(
+        .DATA_WIDTH(11),
+        .INVERT(0)
+    ) prng_gap2 (
+        .clk(clk),
+        .load(rng_load),
+        .seed(random_seed + timer + 1),
+
+        .enable(1),
+        .data_out(rng_data2)
     );
 
     logic signed[11:0] trex_x_pos;
@@ -245,12 +272,23 @@ module runner (
 
         .digits(distance_meter_digits),
         .high_score(distance_meter_high_score),
-        .paint(distance_meter_paint)
+        .paint(distance_meter_paint),
+
+        .invert_trigger
     );
 
     logic signed[10:0] horizon_line_x_pos[2];
 
     logic horizon_line_bump[2];
+
+    logic signed[10:0] moon_x_pos;
+    logic[9:0] moon_width;
+    logic[2:0] moon_phase;
+
+    logic signed[10:0] star_x_pos[NUM_STARS];
+    logic[9:0] star_y_pos[NUM_STARS];
+
+    logic night_paint;
 
     logic cloud_start[MAX_CLOUDS];
 
@@ -281,13 +319,24 @@ module runner (
 
         .speed,
 
-        .rng_data,
+        .rng_data('{rng_data, rng_data2}),
 
         .has_obstacles,
+
+        .night_rate,
 
         .horizon_line_x_pos,
 
         .horizon_line_bump,
+
+        .moon_x_pos,
+        .moon_width,
+        .moon_phase,
+
+        .star_x_pos,
+        .star_y_pos,
+
+        .night_paint,
 
         .cloud_start,
 
@@ -352,6 +401,9 @@ module runner (
             clear_timer <= 0;
             has_obstacles <= 0;
             rng_load <= 1;
+            inverted <= 0;
+            invert_timer <= 0;
+            night_rate <= 0;
         end else begin
             state <= next_state;
 
@@ -359,6 +411,10 @@ module runner (
             painter_finished_last <= painter_finished;
 
             crashed <= check_for_collision();
+
+            if (update) begin
+                update_night_rate();
+            end
 
             // Posedge of painter_finished, step game loop
             if (painter_finished && !painter_finished_last) begin
@@ -390,11 +446,22 @@ module runner (
         end
     end
 
+    task update_night_rate;
+        // Update night rate.
+        if (inverted && night_rate < MAX_NIGHT_RATE) begin
+            night_rate <= night_rate + NIGHT_RATE_DELTA;
+        end else if (!inverted && night_rate > 0) begin
+            night_rate <= night_rate - NIGHT_RATE_DELTA;
+        end
+    endtask
+
     task reset;
         start <= 0;
         speed <= 0;
         clear_timer <= 0;
         has_obstacles <= 0;
+        inverted <= 0;
+        night_rate <= 0;
     endtask
 
     task init;
@@ -410,6 +477,16 @@ module runner (
 
         if (speed + ACCELERATION <= MAX_SPEED) begin
             speed <= speed + ACCELERATION;
+        end
+        
+        // Night mode trigger.
+        if (invert_timer == INVERT_FADE_DURATION) begin
+            invert_timer <= 0;
+            inverted <= 0;
+        end else if (inverted) begin
+            invert_timer <= invert_timer + 1;
+        end else if (invert_trigger) begin
+            inverted <= 1;
         end
     endtask
 
@@ -465,6 +542,36 @@ module runner (
                     horizon_line_x_pos[i] * 2,
                     horizon_line_pkg::Y_POS * 2
                 };
+            end
+
+            // Moon
+            if (night_paint) begin
+                sprite[RENDER_INDEX[MOON]] <= '{
+                    SPRITE[MOON][0] + SPRITE_MOON_OFFSET[moon_phase],
+                    SPRITE[MOON][1],
+                    moon_width * 2,
+                    night_pkg::HEIGHT * 2
+                };
+                pos[RENDER_INDEX[MOON]] <= '{
+                    moon_x_pos * 2,
+                    night_pkg::MOON_Y_POS * 2
+                };
+            end
+
+            // Stars
+            if (night_paint) begin
+                for (int i = 0; i < NUM_STARS; i++) begin
+                    sprite[RENDER_INDEX[STAR] + i] <= '{
+                        SPRITE[STAR][0],
+                        SPRITE[STAR][1],
+                        night_pkg::STAR_SIZE * 2,
+                        night_pkg::STAR_SIZE * 2
+                    };
+                    pos[RENDER_INDEX[STAR] + i] <= '{
+                        star_x_pos[i] * 2,
+                        star_y_pos[i] * 2
+                    };
+                end
             end
 
             // Clouds
