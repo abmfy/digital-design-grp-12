@@ -108,6 +108,12 @@ package runner_pkg;
 
     parameter int SPRITE_HORIZON_LINE_OFFSET[2] = '{0, 1120};
 
+    import night_pkg::NUM_PHASES;
+
+    parameter int SPRITE_MOON_OFFSET[NUM_PHASES] = '{
+        280, 240, 200, 120, 80, 40, 0
+    };
+
     import obstacle_pkg::NONE_0;
     import obstacle_pkg::CACTUS_SMALL_0;
     import obstacle_pkg::CACTUS_LARGE_0;
@@ -199,7 +205,7 @@ module runner (
     logic painter_finished_last;
 
     logic rng_load;
-    bit[10:0] rng_data;
+    bit[10:0] rng_data, rng_data2;
     lfsr_prng #(
         .DATA_WIDTH(11),
         .INVERT(0)
@@ -210,6 +216,17 @@ module runner (
 
         .enable(1),
         .data_out(rng_data)
+    );
+    lfsr_prng #(
+        .DATA_WIDTH(11),
+        .INVERT(0)
+    ) prng_gap2 (
+        .clk(clk),
+        .load(rng_load),
+        .seed(random_seed + timer + 1),
+
+        .enable(1),
+        .data_out(rng_data2)
     );
 
     logic signed[11:0] trex_x_pos;
@@ -264,6 +281,15 @@ module runner (
 
     logic horizon_line_bump[2];
 
+    logic signed[10:0] moon_x_pos;
+    logic[9:0] moon_width;
+    logic[2:0] moon_phase;
+
+    logic signed[10:0] star_x_pos[NUM_STARS];
+    logic[9:0] star_y_pos[NUM_STARS];
+
+    logic night_paint;
+
     logic cloud_start[MAX_CLOUDS];
 
     logic signed[10:0] cloud_x_pos[MAX_CLOUDS];
@@ -293,13 +319,24 @@ module runner (
 
         .speed,
 
-        .rng_data,
+        .rng_data('{rng_data, rng_data2}),
 
         .has_obstacles,
+
+        .night_rate,
 
         .horizon_line_x_pos,
 
         .horizon_line_bump,
+
+        .moon_x_pos,
+        .moon_width,
+        .moon_phase,
+
+        .star_x_pos,
+        .star_y_pos,
+
+        .night_paint,
 
         .cloud_start,
 
@@ -505,6 +542,36 @@ module runner (
                     horizon_line_x_pos[i] * 2,
                     horizon_line_pkg::Y_POS * 2
                 };
+            end
+
+            // Moon
+            if (night_paint) begin
+                sprite[RENDER_INDEX[MOON]] <= '{
+                    SPRITE[MOON][0] + SPRITE_MOON_OFFSET[moon_phase],
+                    SPRITE[MOON][1],
+                    moon_width * 2,
+                    night_pkg::HEIGHT * 2
+                };
+                pos[RENDER_INDEX[MOON]] <= '{
+                    moon_x_pos * 2,
+                    night_pkg::MOON_Y_POS * 2
+                };
+            end
+
+            // Stars
+            if (night_paint) begin
+                for (int i = 0; i < NUM_STARS; i++) begin
+                    sprite[RENDER_INDEX[STAR] + i] <= '{
+                        SPRITE[STAR][0],
+                        SPRITE[STAR][1],
+                        night_pkg::STAR_SIZE * 2,
+                        night_pkg::STAR_SIZE * 2
+                    };
+                    pos[RENDER_INDEX[STAR] + i] <= '{
+                        star_x_pos[i] * 2,
+                        star_y_pos[i] * 2
+                    };
+                end
             end
 
             // Clouds

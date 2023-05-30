@@ -85,6 +85,7 @@ set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
 
 
+set_global_assignment -name SYSTEMVERILOG_FILE src/night.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/cloud.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/horizon_line.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src/resetter.sv

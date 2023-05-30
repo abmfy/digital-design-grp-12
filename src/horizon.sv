@@ -36,14 +36,25 @@ module horizon (
 
     input[14:0] speed,
 
-    input bit[10:0] rng_data,
+    input bit[10:0] rng_data[2],
 
     // Enable obstacle generation.
     input has_obstacles,
 
+    input logic[7:0] night_rate,
+
     output logic signed[10:0] horizon_line_x_pos[2],
 
     output logic horizon_line_bump[2],
+
+    output logic signed[10:0] moon_x_pos,
+    output logic[9:0] moon_width,
+    output logic[2:0] moon_phase,
+
+    output logic signed[10:0] star_x_pos[NUM_STARS],
+    output logic[9:0] star_y_pos[NUM_STARS],
+
+    output logic night_paint,
 
     output logic cloud_start[MAX_CLOUDS],
 
@@ -64,6 +75,10 @@ module horizon (
         collision_box[obstacle_pkg::COLLISION_BOX_COUNT]
 );
     import horizon_pkg::*;
+
+    import night_pkg::NUM_STARS;
+    import night_pkg::SEGMENT_SIZE;
+    import night_pkg::STAR_MAX_Y;
 
     import cloud_pkg::MIN_SKY_LEVEL;
     import cloud_pkg::MAX_SKY_LEVEL;
@@ -89,11 +104,56 @@ module horizon (
         .start,
         .crash,
 
-        .rng_data,
+        .rng_data(rng_data[0]),
 
         .x_pos(horizon_line_x_pos),
 
         .bump(horizon_line_bump)
+    );
+
+    // Night elements.
+    logic[9:0] star_x_rand[NUM_STARS];
+    logic[9:0] star_y_rand[NUM_STARS];
+
+    genvar i1;
+    generate
+        for (i1 = 0; i1 < NUM_STARS; i1++) begin: div_night
+            div div_star_x (
+                .clock(clk),
+                .numer(rng_data[i1]),
+                .denom(SEGMENT_SIZE),
+                .remain(star_x_rand[i1])
+            );
+            div div_star_y (
+                .clock(clk),
+                .numer(rng_data[i1]),
+                .denom(STAR_MAX_Y),
+                .remain(star_y_rand[i1])
+            );
+        end
+    endgenerate
+
+    night night_inst (
+        .clk,
+        .rst,
+
+        .update,
+
+        .crash,
+
+        .star_x_rand,
+        .star_y_rand,
+
+        .night_rate,
+
+        .moon_x_pos,
+        .moon_width,
+        .moon_phase,
+
+        .star_x_pos,
+        .star_y_pos,
+
+        .activated(night_paint)
     );
 
     // Cloud queue.
@@ -112,13 +172,13 @@ module horizon (
 
     div div_cloud_level (
         .clock(clk),
-        .numer(rng_data),
+        .numer(rng_data[0]),
         .denom(MIN_SKY_LEVEL - MAX_SKY_LEVEL),
         .remain(cloud_level_rand)
     );
     div div_cloud_gap (
         .clock(clk),
-        .numer(rng_data),
+        .numer(rng_data[0]),
         .denom(MAX_CLOUD_GAP - MIN_CLOUD_GAP),
         .remain(cloud_gap_rand)
     );
@@ -169,7 +229,7 @@ module horizon (
 
     div div_obstacle_gap (
         .clock(clk),
-        .numer(rng_data),
+        .numer(rng_data[0]),
         .denom(div_obstacle_gap_denom[last_obstacle()]),
         .remain(div_obstacle_gap_remain)
     );
@@ -325,7 +385,7 @@ module horizon (
         end else begin
             // Add new cloud if gap is large enough.
             // Cloud frequency slightly controled.
-            if (rng_data[0]
+            if (rng_data[0][0]
                 && cloud_visible[last_cloud()] && 15'sb0
                 + cloud_x_pos[last_cloud()]
                 + $signed(cloud_pkg::WIDTH)
@@ -410,7 +470,7 @@ module horizon (
         // Try another type if duplicate or not allowed at current speed.
         for (int i = 0; i < OBSTACLE_TYPES; i++) begin
             typ = obstacle_t'(
-                (rng_data + i) % OBSTACLE_TYPES + 1
+                (rng_data[0] + i) % OBSTACLE_TYPES + 1
             );
             if (!duplicate_obstacle_check(typ)
                 && speed >= MIN_SPEED[typ]
