@@ -3,7 +3,7 @@
 module paint_element #(
     COOR_WIDTH = 12,
     ROM_WIDTH = 19,
-    SPRITE_WIDTH = 2446,
+    SPRITE_WIDTH = 2442,
     FRAME_WIDTH = 1280,
     FRAME_HEIGHT = 300
 ) (
