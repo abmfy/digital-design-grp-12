@@ -64,17 +64,17 @@ layout: statement
 
 <v-click>
 
+画面输出采用双显存 + ring buffer，元素绘制基于原版游戏使用的 sprite 图（略有修改），压缩至只有 8 种颜色并裁剪掉不需要的部分从而能放进片内 RAM 而不损失分辨率。
+
+</v-click>
+
+---
+
+# 整体设计简述
+
+<span/>
+
 游戏逻辑 TODO
-
-</v-click>
-
-<v-click>
-
-画面输出采用双显存 + ring buffer，元素绘制基于原版游戏使用的 sprite 图，压缩至只有 4 种颜色从而能放进片内 RAM 而不损失分辨率。
-
-<span class="text-xs">更多细节也是见实验报告。</span>
-
-</v-click>
 
 ---
 

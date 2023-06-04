@@ -79,8 +79,8 @@
             & \texttt{motion_detector.sv} & 由传感器数据判断运动状态 & 游宇凡 \\ \cline{2-4}
             & \texttt{obstacle.sv} &  & 王博文 \\ \cline{2-4}
             & \texttt{painter.sv} & 逐个绘制背景和画面元素 & 游宇凡 \\ \cline{2-4}
-            & \texttt{paint_background.sv} & 绘制画面背景 & 游宇凡 \\ \cline{2-4}
-            & \texttt{paint_element.sv} & 绘制单个画面元素 & 游宇凡 \\ \cline{2-4}
+            & \texttt{paint_background.sv} & 绘制画面空白背景 & 游宇凡 \\ \cline{2-4}
+            & \texttt{paint_element.sv} & 基于 sprite 图绘制单个画面元素 & 游宇凡 \\ \cline{2-4}
             & \texttt{palette.sv} & 由颜色编号以及昼夜转换获取 RGB 值 & 游宇凡 \\ \cline{2-4}
             & \texttt{resetter.sv} & 启动时自动复位，之后按按钮复位 & 游宇凡、王博文 \\ \cline{2-4}
             & \texttt{runner.sv} &  & 王博文 \\ \cline{2-4}
@@ -102,9 +102,9 @@
             & \texttt{lfsr.v} &  &  \\ \cline{2-4}
             & \texttt{lfsr_prng.sv} &  & \\ \cline{2-4}
             & \texttt{util_func.sv} &  & 王博文 \\ \hline
-        \texttt{tools} & \texttt{image-to-mif.py} & 将图片转换为 MIF 文件（2 bit 字宽） & 游宇凡 \\ \hline
+        \texttt{tools} & \texttt{image-to-mif.py} & 将图片转换为 MIF 文件（3 bit 字宽） & 游宇凡 \\ \hline
         \multirow{3}*{\texttt{assets}}
-            & \texttt{sprite.xcf} & \multirow{2}*{将原版 sprite 图的压缩至四种颜色} & Chromium、游宇凡 \\ \cline{2-2} \cline{4-4}
+            & \texttt{sprite.xcf} & \multirow{2}*{基于原版 sprite 图进行了一些修改} & Chromium、游宇凡 \\ \cline{2-2} \cline{4-4}
             & \texttt{sprite.png} & & 由 GIMP 生成 \\ \cline{2-4}
             & \texttt{sprite.mif} & 存于 ROM 中的 sprite 图 & 由 \texttt{image-to-mif.py} 生成 \\ \hline
     \end{tabular}
@@ -134,9 +134,15 @@
 
 采用双显存机制，将片内 RAM 的一半用于写入，一半用于读取，每帧对两块显存进行交换。通过 ring buffer 修复读取缓存产生的延时导致的像素偏移。显存采用 \SI{33.33}{\mega\hertz} 的写入时钟和 VGA 所需的 \SI{83.46}{\mega\hertz} 读取时钟。VGA 模块提供一个画面刷新信号输出，用来告诉游戏逻辑模块需要更新画面。VGA 模块还接受黑夜程度作为输入以实现昼夜转换，为了支持渐变还需要得到过程中的颜色值，如果直接进行乘法运算会有较大的延时，难以在 VGA 的高频时钟下完成计算，所以实际采用的方案是在编译时就计算出所有可能的颜色值（具体实现为使用 $0 \sim 255$ 作为 \texttt{parameter} 分别进行实例化），根据黑夜程度进行选择。
 
+\subsubsection{sprite 图编辑}
+
+原版 sprite 共有 17 种颜色，通过 GIMP 压缩至只有 8 种颜色，使得 ROM 和显存中每个像素只占据 3 个 bit，并且裁剪掉未使用的部分，从而可以放进 FPGA 的内置存储资源（共使用 $2442 \times 130 \times 3 + 2 \times 1280 \times 300 \times 3 \approx \SI{3.26}{\mega b}$ 存储资源）。
+
+除了压缩，还添加了若干元素，包括生命值的图标，以及数字的浅色版本（原版中通过调整透明度实现了对数字深浅的控制）。
+
 \subsubsection{元素绘制}
 
-sprite 图转为 MIF 文件存在片内 ROM 中，原版 sprite 共有 17 种颜色，通过 GIMP 压缩至只有 4 种颜色，使得 ROM 和显存中每个像素只占据 2 个 bit，从而可以放进 FPGA 的内置存储资源（共使用 $2446 \times 194 \times 2 + 2 \times 1280 \times 300 \times 2 \approx \SI{2.49}{\mega b}$ 存储资源）。元素绘制模块接受 sprite 坐标、画面绘制坐标、元素宽高作为参数，从 ROM 中读取每个像素，通过状态机依次绘制空白背景和每个元素。
+sprite 图转为 MIF 文件存在片内 ROM 中。元素绘制模块接受 sprite 坐标、画面绘制坐标、元素宽高作为参数，从 ROM 中读取每个像素，通过状态机依次绘制空白背景和每个元素，绘制每个元素时通过状态机枚举坐标进行绘制。
 
 \subsection{游戏逻辑模块}
 
