@@ -17,7 +17,10 @@ package runner_pkg;
         HIGH_SCORE,
         GAME_OVER,
         TREX,
-        STAR
+        STAR,
+        LIFE,
+        MULTIPLY,
+        LIFE_NUM
     } element_t;
 
     typedef struct packed {
@@ -35,6 +38,8 @@ package runner_pkg;
     parameter CLK_FREQ = 33_333_333;
     parameter FPS = 60;
     parameter CLK_PER_FRAME = CLK_FREQ / FPS;
+
+    parameter LIFES = 9;
 
     parameter CLEAR_TIME = 3 * FPS;
 
@@ -58,9 +63,9 @@ package runner_pkg;
     parameter MAX_NIGHT_RATE = 63;
     parameter NIGHT_RATE_DELTA = 1;
 
-    parameter ELEMENT_TYPES = 11;
+    parameter ELEMENT_TYPES = 14;
 
-    parameter RENDER_SLOTS = 32;
+    parameter RENDER_SLOTS = 37;
     parameter int RENDER_INDEX[ELEMENT_TYPES] = '{
         CACTUS_LARGE: 11,
         CACTUS_SMALL: 11,
@@ -73,7 +78,10 @@ package runner_pkg;
         // This slot is shared with the space in "HI XXXXX"
         GAME_OVER: 26,
         TREX: 18,
-        STAR: 2
+        STAR: 2,
+        LIFE: 32,
+        MULTIPLY: 33,
+        LIFE_NUM: 34
     };
 
     // (x, y)
@@ -88,7 +96,10 @@ package runner_pkg;
         HIGH_SCORE: '{1294, 60},
         GAME_OVER: '{1294, 28},
         TREX: '{1678, 2},
-        STAR: '{1276, 2}
+        STAR: '{1276, 2},
+        LIFE: '{1540, 56},
+        MULTIPLY: '{1571, 56},
+        LIFE_NUM: '{1294, 2}
     };
 
     import trex_pkg::WAITING0;
@@ -152,6 +163,19 @@ package runner_pkg;
     parameter GAME_OVER_X = GAME_WIDTH / 2 - GAME_OVER_WIDTH / 2;
     parameter GAME_OVER_Y = (GAME_HEIGHT - 25) / 3;
 
+    parameter LIFE_WIDTH = 31;
+    parameter LIFE_HEIGHT = 28;
+    parameter LIFE_X = 22;
+    parameter LIFE_Y = 16;
+
+    parameter MULTIPLY_WIDTH = 22;
+    parameter MULTIPLY_HEIGHT = LIFE_HEIGHT;
+    parameter MULTIPLY_X = LIFE_X + LIFE_WIDTH;
+    parameter MULTIPLY_Y = LIFE_Y;
+
+    parameter LIFE_NUM_X = MULTIPLY_X + MULTIPLY_WIDTH;
+    parameter LIFE_NUM_Y = distance_meter_pkg::Y;
+
     parameter TREX_BOX_COUNT = trex_pkg::COLLISION_BOX_COUNT;
     parameter OBSTACLE_BOX_COUNT = obstacle_pkg::COLLISION_BOX_COUNT;
 
@@ -191,6 +215,8 @@ module runner (
     state_t state, next_state;
 
     logic update;
+
+    logic[3:0] life;
 
     logic[5:0] timer;
     logic[14:0] speed;
@@ -240,11 +266,13 @@ module runner (
         .data_out(rng_data2)
     );
 
+    logic trex_immune;
     logic signed[11:0] trex_x_pos;
     logic signed[11:0] trex_y_pos;
     logic[9:0] trex_width;
     logic[9:0] trex_height;
     trex_pkg::frame_t trex_frame;
+    logic trex_paint;
 
     collision_box_t trex_box[TREX_BOX_COUNT];
 
@@ -260,13 +288,19 @@ module runner (
 
         .jump(jumping),
         .duck(ducking),
-        .crash(state == CRASHED),
+        .crack(crashed),
+        // Life is going to 0, dead
+        .crash(crashed && !trex_immune && life == 1),
+
+        .immune(trex_immune),
 
         .x_pos(trex_x_pos),
         .y_pos(trex_y_pos),
         .width(trex_width),
         .height(trex_height),
         .frame(trex_frame),
+
+        .paint(trex_paint),
 
         .collision_box(trex_box)
     );
@@ -380,7 +414,7 @@ module runner (
             end
             RUNNING: begin
                 if (crashed) begin
-                    next_state = CRASHED;
+                    next_state = life > 0 ? RUNNING : CRASHED;
                 end else begin
                     next_state = RUNNING;
                 end
@@ -409,6 +443,7 @@ module runner (
     always_ff @(posedge clk) begin
         if (rst) begin
             state <= WAITING;
+            life <= LIFES;
             update <= 0;
             start <= 0;
             restart <= 0;
@@ -482,6 +517,7 @@ module runner (
     endtask
 
     task reset;
+        life <= LIFES;
         start <= 0;
         speed <= 0;
         clear_timer <= 0;
@@ -497,12 +533,23 @@ module runner (
     endtask
 
     task run;
-        clear_timer <= clear_timer + 1;
-        if (clear_timer > CLEAR_TIME) begin
+        if (clear_timer < CLEAR_TIME) begin
+            clear_timer <= clear_timer + 1;
+        end
+
+        // Stop generating obstacles after crack.
+        if (trex_immune) begin
+            has_obstacles <= 0;
+        end else if (clear_timer == CLEAR_TIME) begin
             has_obstacles <= 1;
         end
 
-        if (speed + ACCELERATION <= slow ? SLOW_MAX_SPEED : MAX_SPEED) begin
+        // Damage after crack.
+        if (crashed && !trex_immune) begin
+            life <= life - 1;
+        end
+
+        if (speed + ACCELERATION <= (slow ? SLOW_MAX_SPEED : MAX_SPEED)) begin
             // In slow mode, half the acceleration.
             if (!slow || slow && timer % 2 == 0) begin
                 speed <= speed + ACCELERATION;
@@ -551,13 +598,15 @@ module runner (
 
         if (!rst) begin
             // T-Rex
-            sprite[RENDER_INDEX[TREX]] <= '{
-                SPRITE[TREX][0] + SPRITE_TREX_OFFSET[trex_frame],
-                SPRITE[TREX][1],
-                trex_width * 2,
-                trex_pkg::HEIGHT * 2
-            };
-            pos[RENDER_INDEX[TREX]] <= '{trex_x_pos * 2, trex_y_pos * 2};
+            if (trex_paint) begin
+                sprite[RENDER_INDEX[TREX]] <= '{
+                    SPRITE[TREX][0] + SPRITE_TREX_OFFSET[trex_frame],
+                    SPRITE[TREX][1],
+                    trex_width * 2,
+                    trex_pkg::HEIGHT * 2
+                };
+                pos[RENDER_INDEX[TREX]] <= '{trex_x_pos * 2, trex_y_pos * 2};
+            end
 
             // Horizon lines
             for (int i = 0; i < 2; i++) begin
@@ -694,6 +743,58 @@ module runner (
                     GAME_OVER_X * 2,
                     GAME_OVER_Y * 2
                 };
+            end
+
+            // Life. Note that this uses sprite coords directly without scaling
+            if (life > 5) begin
+                sprite[RENDER_INDEX[LIFE]] <= '{
+                    SPRITE[LIFE][0],
+                    SPRITE[LIFE][1],
+                    LIFE_WIDTH,
+                    LIFE_HEIGHT
+                };
+                pos[RENDER_INDEX[LIFE]] <= '{
+                    LIFE_X,
+                    LIFE_Y
+                };
+
+                sprite[RENDER_INDEX[MULTIPLY]] <= '{
+                    SPRITE[MULTIPLY][0],
+                    SPRITE[MULTIPLY][1],
+                    MULTIPLY_WIDTH,
+                    MULTIPLY_HEIGHT
+                };
+                pos[RENDER_INDEX[MULTIPLY]] <= '{
+                    MULTIPLY_X,
+                    MULTIPLY_Y
+                };
+
+                sprite[RENDER_INDEX[LIFE_NUM]] <= '{
+                    SPRITE[LIFE_NUM][0] + life * distance_meter_pkg::WIDTH * 2,
+                    SPRITE[LIFE_NUM][1],
+                    distance_meter_pkg::WIDTH * 2,
+                    distance_meter_pkg::HEIGHT * 2
+                };
+                pos[RENDER_INDEX[LIFE_NUM]] <= '{
+                    LIFE_NUM_X,
+                    LIFE_NUM_Y
+                };
+            end else begin
+                // Show life icons directly when life <= 5
+                for (int i = 0; i < 5; i++) begin
+                    if (life > i) begin
+                        sprite[RENDER_INDEX[LIFE] + i] <= '{
+                            SPRITE[LIFE][0],
+                            SPRITE[LIFE][1],
+                            LIFE_WIDTH,
+                            LIFE_HEIGHT
+                        };
+                        pos[RENDER_INDEX[LIFE] + i] <= '{
+                            LIFE_X + i * LIFE_WIDTH,
+                            LIFE_Y
+                        };
+                    end
+                end
             end
         end
     end

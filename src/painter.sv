@@ -3,7 +3,7 @@ import runner_pkg::pos_t;
 
 module painter #(
     COOR_WIDTH = 12,
-    ELEMENT_COUNT = 32,
+    ELEMENT_COUNT = 37,
     ELEMENT_WIDTH = $clog2(ELEMENT_COUNT)
 ) (
     input clk_33m,

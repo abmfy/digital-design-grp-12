@@ -36,6 +36,12 @@ package trex_pkg;
     // Position when on the ground.
     parameter GROUND_Y_POS = 150 - HEIGHT - 10;
 
+    // Flash duration in frames.
+    parameter FLASH_DURATION = 15;
+
+    // Flash iterations for achievement animation.
+    parameter FLASH_ITERATONS = 3;
+
     import collision_pkg::collision_box_t;
 
     parameter COLLISION_BOX_COUNT = 6;
@@ -67,7 +73,11 @@ module trex (
 
     input jump,
     input duck,
+    input crack,
     input crash,
+
+    // Immune to collision after a crack.
+    output logic immune,
 
     output logic signed[11:0] x_pos,
     output logic signed[11:0] y_pos,
@@ -75,6 +85,7 @@ module trex (
     output logic[9:0] height,
 
     output trex_pkg::frame_t frame,
+    output logic paint,
 
     output collision_pkg::collision_box_t
         collision_box[trex_pkg::COLLISION_BOX_COUNT]
@@ -105,6 +116,10 @@ module trex (
 
     logic reached_min_height;
 
+    // Flash when cracked.
+    logic[4:0] flash_timer;
+    logic[2:0] flash_iterations;
+
     collision_pkg::collision_box_t
         collision_box_tmp[trex_pkg::COLLISION_BOX_COUNT];
 
@@ -120,6 +135,10 @@ module trex (
             jump_velocity <= 0;
             gravity_counter <= 0;
             reached_min_height <= 0;
+            immune <= 0;
+            flash_timer <= 0;
+            flash_iterations <= 0;
+            paint <= 1;
             for (int i = 0; i < COLLISION_BOX_COUNT; i++) begin
                 collision_box[i] <= '{0, 0, 0, 0};
             end
@@ -131,6 +150,34 @@ module trex (
             collision_box <= collision_box_tmp;
 
             if (update) begin
+                // Cracked, flash t-rex.
+                if (crash || state == CRASHED) begin
+                    immune <= 0;
+                end else if (crack) begin
+                    immune <= 1;
+                end
+
+                if (immune) begin
+                    if (flash_iterations <= FLASH_ITERATONS) begin
+                        flash_timer <= flash_timer + 1;
+                        if (flash_timer < FLASH_DURATION) begin
+                            paint <= 0;
+                        end else begin
+                            paint <= 1;
+                            if (flash_timer > FLASH_DURATION * 2) begin
+                                flash_timer <= 0;
+                                flash_iterations <= flash_iterations + 1;
+                            end
+                        end
+                    end else begin
+                        immune <= 0;
+                        flash_timer <= 0;
+                        flash_iterations <= 0;
+                    end
+                end else begin
+                    paint <= 1;
+                end
+
                 case (next_state)
                     RUNNING: begin
                         // Clear jumping state, e.g. jumping velocity.

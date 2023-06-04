@@ -255,7 +255,7 @@ module mod_top (
   );
 
   always_comb begin
-    for (int i = 0; i < RENDER_SLOTS; i++) begin
+    for (int i = 0; i < 32; i++) begin
       leds[i] = sprite[i].w != 0;
     end
   end
