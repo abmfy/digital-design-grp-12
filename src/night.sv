@@ -3,7 +3,7 @@ package night_pkg;
     parameter SPEED_SCALE = 1024;
 
     // Visible when the night rate is above this value.
-    parameter VISIBLE_RATE = 130;
+    parameter VISIBLE_RATE = 32;
 
     parameter MOON_INIT_X_POS = GAME_WIDTH - 50;
     parameter MOON_Y_POS = 30;
@@ -34,7 +34,7 @@ module night (
     input[9:0] star_x_rand[2],
     input[9:0] star_y_rand[2],
 
-    input[7:0] night_rate,
+    input[5:0] night_rate,
 
     output logic signed[10:0] moon_x_pos,
     output logic[9:0] moon_width,

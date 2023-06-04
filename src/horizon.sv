@@ -41,7 +41,7 @@ module horizon (
     // Enable obstacle generation.
     input has_obstacles,
 
-    input logic[7:0] night_rate,
+    input logic[5:0] night_rate,
 
     output logic signed[10:0] horizon_line_x_pos[2],
 

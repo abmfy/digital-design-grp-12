@@ -1,5 +1,5 @@
 module palette #(
-    MAX_NIGHT_RATE = 255,
+    MAX_NIGHT_RATE = 63,
     NIGHT_RATE = 0
 ) (
     input [2:0] palette_index,

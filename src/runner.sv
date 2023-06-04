@@ -50,8 +50,8 @@ package runner_pkg;
     parameter GAME_HEIGHT = 150;
 
     parameter INVERT_FADE_DURATION = 720;
-    parameter MAX_NIGHT_RATE = 255;
-    parameter NIGHT_RATE_DELTA = 5;
+    parameter MAX_NIGHT_RATE = 63;
+    parameter NIGHT_RATE_DELTA = 1;
 
     parameter ELEMENT_TYPES = 11;
 
@@ -170,7 +170,7 @@ module runner (
     output sprite_t sprite[RENDER_SLOTS],
     output pos_t pos[RENDER_SLOTS],
 
-    output logic[7:0] night_rate
+    output logic[5:0] night_rate
 );
     import runner_pkg::*;
 

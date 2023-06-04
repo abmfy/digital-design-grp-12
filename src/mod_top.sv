@@ -167,12 +167,12 @@ module mod_top (
   wire rst_screen_33m;
   wire rst_screen_vga;
 
-  logic [7:0] night_rate;
-  logic [7:0] night_rate_vga;
+  logic [5:0] night_rate;
+  logic [5:0] night_rate_vga;
 
   genvar i;
   generate
-    for (i = 0; i < 8; i++) begin: gen_night_rate
+    for (i = 0; i < 6; i++) begin: gen_night_rate
       ram_cross_domain cross_domain_night_rate (
         .wrclock(clk_33m),
         .wraddress(0),

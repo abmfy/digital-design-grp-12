@@ -18,7 +18,7 @@ module vga #(
     FRAME_BOTTOM = 550,
     RAM_SIZE = (FRAME_RIGHT - FRAME_LEFT) * (FRAME_BOTTOM - FRAME_TOP),
     BUFFER_WIDTH = 4,
-    NIGHT_RATE_WIDTH = 8,
+    NIGHT_RATE_WIDTH = 6,
     MAX_NIGHT_RATE = (1 << NIGHT_RATE_WIDTH) - 1
 ) (
     input clk_33m,
@@ -27,7 +27,7 @@ module vga #(
     input [COOR_WIDTH-1:0] write_x,  // [0, 1280)
     input [COOR_WIDTH-1:0] write_y,  // [0, 300)
     input [2:0] write_palette,
-    input [NIGHT_RATE_WIDTH-1:0] night_rate, // must be multiple of 5
+    input [NIGHT_RATE_WIDTH-1:0] night_rate,
     output rst_screen_vga,
     output rst_screen_33m,  // refresh screen, swap RAM r/w parts
     output logic hsync,
@@ -132,7 +132,7 @@ module vga #(
 
   genvar i;
   generate
-    for (i = 0; i <= MAX_NIGHT_RATE; i += 5) begin : palette_gen
+    for (i = 0; i <= MAX_NIGHT_RATE; i += 1) begin : palette_gen
       palette #(
           .MAX_NIGHT_RATE(MAX_NIGHT_RATE),
           .NIGHT_RATE(i)
