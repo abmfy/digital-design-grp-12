@@ -38,6 +38,8 @@ package runner_pkg;
 
     parameter CLEAR_TIME = 3 * FPS;
 
+    parameter RESTART_TIME = FPS;
+
     // Scale from pixel speed to game speed
     parameter SPEED_SCALE = 1024;
 
@@ -196,6 +198,9 @@ module runner (
     // Generate obstacles only after CLEAR_TIME.
     logic[7:0] clear_timer;
     logic has_obstacles;
+
+    // Only allow restart after RESTART_TIME.
+    logic[7:0] restart_timer;
 
     logic start;
     logic restart;
@@ -382,7 +387,9 @@ module runner (
             end
             CRASHED: begin
                 // Jump again after crash to restart.
-                if (jumping && !jumping_last) begin
+                if (restart_timer == RESTART_TIME &&
+                    jumping && !jumping_last
+                ) begin
                     next_state = RESTARTING;
                 end else begin
                     next_state = CRASHED;
@@ -411,6 +418,7 @@ module runner (
             painter_finished_last <= 0;
             speed <= 0;
             clear_timer <= 0;
+            restart_timer <= 0;
             has_obstacles <= 0;
             rng_load <= 1;
             inverted <= 0;
@@ -435,6 +443,12 @@ module runner (
                     timer <= 0;
                 end else begin
                     timer <= timer + 1;
+                end
+
+                if (next_state == CRASHED) begin
+                    if (restart_timer < RESTART_TIME) begin
+                        restart_timer <= restart_timer + 1;
+                    end
                 end
             end else begin
                 update <= 0;
@@ -471,6 +485,7 @@ module runner (
         start <= 0;
         speed <= 0;
         clear_timer <= 0;
+        restart_timer <= 0;
         has_obstacles <= 0;
         inverted <= 0;
         night_rate <= 0;
