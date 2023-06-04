@@ -80,7 +80,7 @@ package runner_pkg;
         MOON: '{954, 2},
         PTERODACTYL: '{260, 2},
         DISTANCE: '{1294, 2},
-        HIGH_SCORE: '{1294, 2},
+        HIGH_SCORE: '{1294, 60},
         GAME_OVER: '{1294, 28},
         TREX: '{1678, 2},
         STAR: '{1276, 2}
@@ -633,6 +633,10 @@ module runner (
 
             // High score
             for (int i = 0; i < MAX_HIGH_SCORE_UNITS; i++) begin
+                // Ignore the space
+                if (i == 2) begin
+                    continue;
+                end
                 sprite[RENDER_INDEX[HIGH_SCORE] + i] <= '{
                     SPRITE[HIGH_SCORE][0]
                         + distance_meter_high_score[i]
