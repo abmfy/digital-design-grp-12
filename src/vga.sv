@@ -161,9 +161,12 @@ module vga #(
         output_green <= 0;
         output_blue  <= 0;
       end else begin
-        output_red   <= ('hff - night_rate) << (8 - NIGHT_RATE_WIDTH);
-        output_green <= ('hff - night_rate) << (8 - NIGHT_RATE_WIDTH);
-        output_blue  <= ('hff - night_rate) << (8 - NIGHT_RATE_WIDTH);
+        output_red   <= night_rate * 255 / MAX_NIGHT_RATE
+          + (MAX_NIGHT_RATE - night_rate * 2) * 'hff / MAX_NIGHT_RATE;
+        output_green <= night_rate * 255 / MAX_NIGHT_RATE
+          + (MAX_NIGHT_RATE - night_rate * 2) * 'hff / MAX_NIGHT_RATE;
+        output_blue  <= night_rate * 255 / MAX_NIGHT_RATE
+          + (MAX_NIGHT_RATE - night_rate * 2) * 'hff / MAX_NIGHT_RATE;
       end
     end else begin
       output_red   <= 0;
