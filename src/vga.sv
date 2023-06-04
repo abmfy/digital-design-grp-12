@@ -27,7 +27,7 @@ module vga #(
     input [COOR_WIDTH-1:0] write_x,  // [0, 1280)
     input [COOR_WIDTH-1:0] write_y,  // [0, 300)
     input [2:0] write_palette,
-    input [NIGHT_RATE_WIDTH-1:0] night_rate,
+    input [NIGHT_RATE_WIDTH-1:0] night_rate, // must be multiple of 5
     output rst_screen_vga,
     output rst_screen_33m,  // refresh screen, swap RAM r/w parts
     output logic hsync,
