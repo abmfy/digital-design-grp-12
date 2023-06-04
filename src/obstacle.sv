@@ -127,6 +127,8 @@ module obstacle (
     input[5:0] timer,
     input[14:0] speed,
 
+    input slow,
+
     input obstacle_pkg::type_t typ,
     input start,
     input crash,
@@ -320,7 +322,7 @@ module obstacle (
 
     task update_gap;
         // Wait for the divider to finish.
-        gap <= div_remain + min_gap;
+        gap <= (div_remain + min_gap) * (slow ? 2 : 1);
     endtask
 
     function logic signed[20:0] get_x_pos;

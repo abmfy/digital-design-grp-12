@@ -221,14 +221,19 @@ module mod_top (
       .finished(painter_finished)
   );
 
+  logic sensor_mode;
+  assign sensor_mode = dip_sw[15];
+
   bit [10:0] rng_data;
 
   runner runner_inst (
       .clk(clk_33m),
       .rst(reset_33m),
 
-      .jumping(dip_sw[15] ? jumping_33m : clock_btn),
-      .ducking(dip_sw[15] ? ducking_33m : ~touch_btn[3]),
+      .slow(sensor_mode),
+
+      .jumping(sensor_mode ? jumping_33m : clock_btn),
+      .ducking(sensor_mode ? ducking_33m : ~touch_btn[3]),
 
       .painter_finished,
 

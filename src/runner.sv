@@ -42,7 +42,10 @@ package runner_pkg;
     parameter SPEED_SCALE = 1024;
 
     parameter SPEED = 6 * SPEED_SCALE;
+    parameter SLOW_SPEED = 4 * SPEED_SCALE;
+
     parameter MAX_SPEED = 13 * SPEED_SCALE;
+    parameter SLOW_MAX_SPEED = 9 * SPEED_SCALE;
 
     parameter ACCELERATION = 1;
 
@@ -158,7 +161,10 @@ import runner_pkg::pos_t;
 
 module runner (
     input clk,
-    input rst,    
+    input rst,   
+
+    // Slow mode.
+    input slow,
 
     input jumping,
     input ducking,
@@ -245,6 +251,8 @@ module runner (
         .timer,
         .speed(speed / SPEED_SCALE),
 
+        .slow,
+
         .jump(jumping),
         .duck(ducking),
         .crash(state == CRASHED),
@@ -269,6 +277,8 @@ module runner (
         .update,
         .restart,
         .speed(state == CRASHED ? 0 : speed),
+
+        .slow,
 
         .digits(distance_meter_digits),
         .high_score(distance_meter_high_score),
@@ -318,6 +328,8 @@ module runner (
         .crash(state == CRASHED),
 
         .speed,
+
+        .slow,
 
         .rng_data('{rng_data, rng_data2}),
 
@@ -466,7 +478,7 @@ module runner (
 
     task init;
         start <= 1;
-        speed <= SPEED;
+        speed <= slow ? SLOW_SPEED : SPEED;
     endtask
 
     task run;
@@ -475,8 +487,11 @@ module runner (
             has_obstacles <= 1;
         end
 
-        if (speed + ACCELERATION <= MAX_SPEED) begin
-            speed <= speed + ACCELERATION;
+        if (speed + ACCELERATION <= slow ? SLOW_MAX_SPEED : MAX_SPEED) begin
+            // In slow mode, half the acceleration.
+            if (!slow || slow && timer % 2 == 0) begin
+                speed <= speed + ACCELERATION;
+            end
         end
         
         // Night mode trigger.

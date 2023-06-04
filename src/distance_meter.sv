@@ -31,6 +31,7 @@ package distance_meter_pkg;
     parameter FLASH_ITERATONS = 3;
 
     parameter INVERT_DISTANCE = 700;
+    parameter SLOW_INVERT_DISTANCE = 350;
 
     parameter X = (GAME_WIDTH - (DEST_WIDTH * (MAX_DISTANCE_UNITS + 1))) * 2;
     parameter Y = 20;
@@ -50,6 +51,8 @@ module distance_meter(
     input restart,
 
     input[14:0] speed,
+
+    input slow,
 
     output distance_t digits,
     output logic[3:0] high_score[MAX_HIGH_SCORE_UNITS],
@@ -121,7 +124,9 @@ module distance_meter(
                 distance_val <= distance_val + 1;
 
                 // Trigger night mode.
-                if (invert_counter + 1 == INVERT_DISTANCE) begin
+                if (invert_counter + 1 ==
+                    (slow ? SLOW_INVERT_DISTANCE : INVERT_DISTANCE)
+                ) begin
                     invert_counter <= 0;
                     invert_trigger <= 1;
                 end else begin

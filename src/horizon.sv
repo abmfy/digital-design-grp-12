@@ -36,6 +36,8 @@ module horizon (
 
     input[14:0] speed,
 
+    input slow,
+
     input bit[10:0] rng_data[2],
 
     // Enable obstacle generation.
@@ -244,6 +246,8 @@ module horizon (
                 .update(obstacle_update),
                 .timer,
                 .speed,
+
+                .slow,
 
                 .typ(obstacle_type[i]),
                 .start(obstacle_start[i]),

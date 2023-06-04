@@ -25,13 +25,16 @@ package trex_pkg;
     parameter WIDTH_DUCK = 59;
 
     parameter GRAVITY = 6;
+    parameter SLOW_GRAVITY = 3;
     parameter MAX_JUMP_HEIGHT = 30;
+    parameter SLOW_MAX_JUMP_HEIGHT = 50;
+    parameter MIN_JUMP_HEIGHT = 30;
+    parameter SLOW_MIN_JUMP_HEIGHT = 45;
     parameter signed INITIAL_JUMP_VELOCITY = -10;
+    parameter signed SLOW_INITIAL_JUMP_VELOCITY = -20;
 
     // Position when on the ground.
     parameter GROUND_Y_POS = 150 - HEIGHT - 10;
-
-    parameter MIN_JUMP_HEIGHT = GROUND_Y_POS - 30;
 
     import collision_pkg::collision_box_t;
 
@@ -60,6 +63,8 @@ module trex (
 
     input[4:0] speed,
 
+    input slow,
+
     input jump,
     input duck,
     input crash,
@@ -80,6 +85,20 @@ module trex (
     import util_func::*;
 
     state_t state, next_state;
+
+    logic[4:0] gravity;
+    assign gravity = slow ? SLOW_GRAVITY : GRAVITY;
+
+    logic[7:0] max_jump_height;
+    assign max_jump_height = slow ? SLOW_MAX_JUMP_HEIGHT : MAX_JUMP_HEIGHT;
+
+    logic[7:0] min_jump_height;
+    assign min_jump_height = GROUND_Y_POS -
+        (slow ? SLOW_MIN_JUMP_HEIGHT : MIN_JUMP_HEIGHT);
+
+    logic signed[9:0] initial_jump_velocity;
+    assign initial_jump_velocity = slow ?
+        SLOW_INITIAL_JUMP_VELOCITY : INITIAL_JUMP_VELOCITY;
 
     logic signed[9:0] jump_velocity;
     logic[4:0] gravity_counter;
@@ -239,7 +258,7 @@ module trex (
     // Initialize a jump.
     task start_jump(logic[3:0] speed);
         // Tweak the jump velocity based on the speed.
-        jump_velocity <= INITIAL_JUMP_VELOCITY - (speed >> 3);
+        jump_velocity <= initial_jump_velocity - (speed >> 3);
         gravity_counter <= 0;
         reached_min_height <= 0;
     endtask
@@ -258,22 +277,22 @@ module trex (
 
     // Update frame for a jump.
     task update_jump(int coefficient = 1);
-        if (gravity_counter + GRAVITY >= 10) begin
-            gravity_counter <= gravity_counter + GRAVITY - 10;
+        if (gravity_counter + gravity >= 10) begin
+            gravity_counter <= gravity_counter + gravity - 10;
             jump_velocity <= jump_velocity + 1;
             y_pos <= y_pos + (jump_velocity + 1) * coefficient;
         end else begin
-            gravity_counter <= gravity_counter + GRAVITY;
+            gravity_counter <= gravity_counter + gravity;
             y_pos <= y_pos + jump_velocity * coefficient;
         end
 
         // Minimum height has been reached.
-        if (y_pos < MIN_JUMP_HEIGHT || duck) begin
+        if (y_pos < min_jump_height || duck) begin
             reached_min_height = 1;
         end
 
         // Reached max height.
-        if (y_pos < MAX_JUMP_HEIGHT) begin
+        if (y_pos < max_jump_height) begin
             end_jump();
         end
 
