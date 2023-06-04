@@ -132,7 +132,7 @@ module vga #(
 
   genvar i;
   generate
-    for (i = 0; i <= MAX_NIGHT_RATE; ++i) begin : palette_gen
+    for (i = 0; i <= MAX_NIGHT_RATE; i += 5) begin : palette_gen
       palette #(
           .MAX_NIGHT_RATE(MAX_NIGHT_RATE),
           .NIGHT_RATE(i)
