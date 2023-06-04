@@ -14,7 +14,7 @@ module painter #(
 
     output logic[COOR_WIDTH-1:0] write_x,
     output logic[COOR_WIDTH-1:0] write_y,
-    output logic[1:0] write_palette,
+    output logic[2:0] write_palette,
 
     output logic finished
 );
@@ -27,7 +27,7 @@ module painter #(
     logic background_wait;
     wire[COOR_WIDTH-1:0] background_x;
     wire[COOR_WIDTH-1:0] background_y;
-    wire[1:0] background_palette;
+    wire[2:0] background_palette;
     wire background_finished;
 
     paint_background #(
@@ -53,7 +53,7 @@ module painter #(
     logic[COOR_WIDTH-1:0] element_height;
     wire[COOR_WIDTH-1:0] element_x;
     wire[COOR_WIDTH-1:0] element_y;
-    wire[1:0] element_palette;
+    wire[2:0] element_palette;
     wire element_finished;
 
     paint_element #(

@@ -22,7 +22,7 @@ print(palette)
 pixels = im.getdata()
 
 with open("../assets/sprite.mif", "w") as file:
-    file.write(f"""WIDTH = 2;
+    file.write(f"""WIDTH = 3;
 DEPTH = {len(pixels)};
 ADDRESS_RADIX = HEX;
 DATA_RADIX = BIN;
@@ -31,5 +31,5 @@ CONTENT BEGIN
 
 """)
     for i, pixel in enumerate(pixels):
-        file.write(f"{i:05x} : {pixel:02b};\n")
+        file.write(f"{i:05x} : {pixel:03b};\n")
     file.write("\nEND;")

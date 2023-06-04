@@ -19,9 +19,9 @@ module paint_element #(
     input [COOR_WIDTH-1:0] width,
     input [COOR_WIDTH-1:0] height,
     // write to RAM
-    output [COOR_WIDTH-1:0] write_x,
-    output [COOR_WIDTH-1:0] write_y,
-    output [1:0] write_palette,
+    output logic [COOR_WIDTH-1:0] write_x,
+    output logic [COOR_WIDTH-1:0] write_y,
+    output logic [2:0] write_palette,
     // paint finished
     output finished
 );
@@ -62,7 +62,7 @@ module paint_element #(
     else rom_addr = (sprite_x + x) + (sprite_y + y) * SPRITE_WIDTH;
   end
 
-  wire [1:0] read_palette;
+  wire [2:0] read_palette;
   rom_sprite rom_sprite_inst (
       .clock(clk_33m),
       .address(rom_addr),

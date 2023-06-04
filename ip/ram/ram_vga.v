@@ -47,14 +47,14 @@ module ram_vga (
 	wren,
 	q);
 
-	input	[1:0]  data;
+	input	[2:0]  data;
 	input	[19:0]  rdaddress;
 	input	  rdclock;
 	input	  rden;
 	input	[19:0]  wraddress;
 	input	  wrclock;
 	input	  wren;
-	output	[1:0]  q;
+	output	[2:0]  q;
 `ifndef ALTERA_RESERVED_QIS
 // synopsys translate_off
 `endif
@@ -65,8 +65,8 @@ module ram_vga (
 // synopsys translate_on
 `endif
 
-	wire [1:0] sub_wire0;
-	wire [1:0] q = sub_wire0[1:0];
+	wire [2:0] sub_wire0;
+	wire [2:0] q = sub_wire0[2:0];
 
 	altsyncram	altsyncram_component (
 				.address_a (wraddress),
@@ -87,7 +87,7 @@ module ram_vga (
 				.clocken1 (1'b1),
 				.clocken2 (1'b1),
 				.clocken3 (1'b1),
-				.data_b ({2{1'b1}}),
+				.data_b ({3{1'b1}}),
 				.eccstatus (),
 				.q_a (),
 				.rden_a (1'b1),
@@ -109,8 +109,8 @@ module ram_vga (
 		altsyncram_component.rdcontrol_reg_b = "CLOCK1",
 		altsyncram_component.widthad_a = 20,
 		altsyncram_component.widthad_b = 20,
-		altsyncram_component.width_a = 2,
-		altsyncram_component.width_b = 2,
+		altsyncram_component.width_a = 3,
+		altsyncram_component.width_b = 3,
 		altsyncram_component.width_byteena_a = 1;
 
 
@@ -149,7 +149,7 @@ endmodule
 // Retrieval info: PRIVATE: JTAG_ENABLED NUMERIC "0"
 // Retrieval info: PRIVATE: JTAG_ID STRING "NONE"
 // Retrieval info: PRIVATE: MAXIMUM_DEPTH NUMERIC "0"
-// Retrieval info: PRIVATE: MEMSIZE NUMERIC "1536000"
+// Retrieval info: PRIVATE: MEMSIZE NUMERIC "2304000"
 // Retrieval info: PRIVATE: MEM_IN_BITS NUMERIC "0"
 // Retrieval info: PRIVATE: MIFfilename STRING ""
 // Retrieval info: PRIVATE: OPERATION_MODE NUMERIC "2"
@@ -169,10 +169,10 @@ endmodule
 // Retrieval info: PRIVATE: USE_DIFF_CLKEN NUMERIC "0"
 // Retrieval info: PRIVATE: UseDPRAM NUMERIC "1"
 // Retrieval info: PRIVATE: VarWidth NUMERIC "0"
-// Retrieval info: PRIVATE: WIDTH_READ_A NUMERIC "2"
-// Retrieval info: PRIVATE: WIDTH_READ_B NUMERIC "2"
-// Retrieval info: PRIVATE: WIDTH_WRITE_A NUMERIC "2"
-// Retrieval info: PRIVATE: WIDTH_WRITE_B NUMERIC "2"
+// Retrieval info: PRIVATE: WIDTH_READ_A NUMERIC "3"
+// Retrieval info: PRIVATE: WIDTH_READ_B NUMERIC "3"
+// Retrieval info: PRIVATE: WIDTH_WRITE_A NUMERIC "3"
+// Retrieval info: PRIVATE: WIDTH_WRITE_B NUMERIC "3"
 // Retrieval info: PRIVATE: WRADDR_ACLR_B NUMERIC "0"
 // Retrieval info: PRIVATE: WRADDR_REG_B NUMERIC "0"
 // Retrieval info: PRIVATE: WRCTRL_ACLR_B NUMERIC "0"
@@ -195,11 +195,11 @@ endmodule
 // Retrieval info: CONSTANT: RDCONTROL_REG_B STRING "CLOCK1"
 // Retrieval info: CONSTANT: WIDTHAD_A NUMERIC "20"
 // Retrieval info: CONSTANT: WIDTHAD_B NUMERIC "20"
-// Retrieval info: CONSTANT: WIDTH_A NUMERIC "2"
-// Retrieval info: CONSTANT: WIDTH_B NUMERIC "2"
+// Retrieval info: CONSTANT: WIDTH_A NUMERIC "3"
+// Retrieval info: CONSTANT: WIDTH_B NUMERIC "3"
 // Retrieval info: CONSTANT: WIDTH_BYTEENA_A NUMERIC "1"
-// Retrieval info: USED_PORT: data 0 0 2 0 INPUT NODEFVAL "data[1..0]"
-// Retrieval info: USED_PORT: q 0 0 2 0 OUTPUT NODEFVAL "q[1..0]"
+// Retrieval info: USED_PORT: data 0 0 3 0 INPUT NODEFVAL "data[2..0]"
+// Retrieval info: USED_PORT: q 0 0 3 0 OUTPUT NODEFVAL "q[2..0]"
 // Retrieval info: USED_PORT: rdaddress 0 0 20 0 INPUT NODEFVAL "rdaddress[19..0]"
 // Retrieval info: USED_PORT: rdclock 0 0 0 0 INPUT NODEFVAL "rdclock"
 // Retrieval info: USED_PORT: rden 0 0 0 0 INPUT VCC "rden"
@@ -210,10 +210,10 @@ endmodule
 // Retrieval info: CONNECT: @address_b 0 0 20 0 rdaddress 0 0 20 0
 // Retrieval info: CONNECT: @clock0 0 0 0 0 wrclock 0 0 0 0
 // Retrieval info: CONNECT: @clock1 0 0 0 0 rdclock 0 0 0 0
-// Retrieval info: CONNECT: @data_a 0 0 2 0 data 0 0 2 0
+// Retrieval info: CONNECT: @data_a 0 0 3 0 data 0 0 3 0
 // Retrieval info: CONNECT: @rden_b 0 0 0 0 rden 0 0 0 0
 // Retrieval info: CONNECT: @wren_a 0 0 0 0 wren 0 0 0 0
-// Retrieval info: CONNECT: q 0 0 2 0 @q_b 0 0 2 0
+// Retrieval info: CONNECT: q 0 0 3 0 @q_b 0 0 3 0
 // Retrieval info: GEN_FILE: TYPE_NORMAL ram_vga.v TRUE
 // Retrieval info: GEN_FILE: TYPE_NORMAL ram_vga.inc FALSE
 // Retrieval info: GEN_FILE: TYPE_NORMAL ram_vga.cmp FALSE

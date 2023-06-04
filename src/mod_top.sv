@@ -163,7 +163,7 @@ module mod_top (
 
   wire [11:0] write_x;
   wire [11:0] write_y;
-  wire [1:0] write_palette;
+  wire [2:0] write_palette;
   wire rst_screen_33m;
   wire rst_screen_vga;
 

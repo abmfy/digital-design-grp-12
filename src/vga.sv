@@ -26,7 +26,7 @@ module vga #(
     // write inputs are in clk 33m
     input [COOR_WIDTH-1:0] write_x,  // [0, 1280)
     input [COOR_WIDTH-1:0] write_y,  // [0, 300)
-    input [1:0] write_palette,
+    input [2:0] write_palette,
     input [NIGHT_RATE_WIDTH-1:0] night_rate,
     output rst_screen_vga,
     output rst_screen_33m,  // refresh screen, swap RAM r/w parts
@@ -111,7 +111,7 @@ module vga #(
   assign read_enable = read_x >= FRAME_LEFT && read_x < FRAME_RIGHT && read_y >= FRAME_TOP && read_y < FRAME_BOTTOM;
   assign read_addr = read_part * RAM_SIZE + (read_x - FRAME_LEFT) + (read_y - FRAME_TOP) * (FRAME_RIGHT - FRAME_LEFT);
 
-  wire [1:0] read_palette;
+  wire [2:0] read_palette;
 
   // RAM
   ram_vga ram_vga_inst (

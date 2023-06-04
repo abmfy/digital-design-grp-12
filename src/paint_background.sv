@@ -10,7 +10,7 @@ module paint_background #(
     // write to RAM
     output [COOR_WIDTH-1:0] write_x,
     output [COOR_WIDTH-1:0] write_y,
-    output [1:0] write_palette,
+    output [2:0] write_palette,
     // paint finished
     output finished
 );
@@ -35,5 +35,5 @@ module paint_background #(
 
   assign write_x = finished ? 0 : x;
   assign write_y = finished ? 0 : y;
-  assign write_palette = finished ? 0 : 3;  // 3 is white
+  assign write_palette = finished ? 0 : 7;  // 7 is white
 endmodule
