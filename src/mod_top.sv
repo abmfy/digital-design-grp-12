@@ -226,14 +226,21 @@ module mod_top (
 
   bit [10:0] rng_data;
 
+  logic jump_buffer;
+  logic duck_buffer;
+  always_ff @(posedge clk_33m) begin
+    jump_buffer <= sensor_mode ? jumping_33m : clock_btn;
+    duck_buffer <= sensor_mode ? ducking_33m : ~touch_btn[3];
+  end
+
   runner runner_inst (
       .clk(clk_33m),
       .rst(reset_33m),
 
       .slow(sensor_mode),
 
-      .jumping(sensor_mode ? jumping_33m : clock_btn),
-      .ducking(sensor_mode ? ducking_33m : ~touch_btn[3]),
+      .jumping(jump_buffer),
+      .ducking(duck_buffer),
 
       .painter_finished,
 
