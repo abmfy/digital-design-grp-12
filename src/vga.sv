@@ -112,9 +112,6 @@ module vga #(
   assign read_addr = read_part * RAM_SIZE + (read_x - FRAME_LEFT) + (read_y - FRAME_TOP) * (FRAME_RIGHT - FRAME_LEFT);
 
   wire [2:0] read_palette;
-  wire [2:0] palette;
-  // Set as white if not in frame.
-  assign palette = read_enable ? read_palette : 7;
 
   // RAM
   ram_vga ram_vga_inst (
@@ -140,7 +137,7 @@ module vga #(
           .MAX_NIGHT_RATE(MAX_NIGHT_RATE),
           .NIGHT_RATE(i)
       ) palette_inst (
-          .palette_index(palette),
+          .palette_index(read_palette),
           .red(read_red[i]),
           .green(read_green[i]),
           .blue(read_blue[i])
@@ -149,10 +146,28 @@ module vga #(
   endgenerate
 
   always_ff @(posedge clk_vga) begin
-    if (output_x < HSIZE && output_y < VSIZE) begin
+    if (output_x >= FRAME_LEFT && output_x < FRAME_RIGHT && output_y >= FRAME_TOP && output_y < FRAME_BOTTOM) begin
       output_red   <= read_red[night_rate];
       output_green <= read_green[night_rate];
       output_blue  <= read_blue[night_rate];
+    end else if (output_x < HSIZE && output_y < VSIZE) begin
+      if (night_rate == 0) begin
+        output_red   <= 255;
+        output_green <= 255;
+        output_blue  <= 255;
+      end else
+      if (night_rate == MAX_NIGHT_RATE) begin
+        output_red   <= 0;
+        output_green <= 0;
+        output_blue  <= 0;
+      end else begin
+        output_red   <= night_rate * 255 / MAX_NIGHT_RATE
+          + (MAX_NIGHT_RATE - night_rate * 2) * 'hff / MAX_NIGHT_RATE;
+        output_green <= night_rate * 255 / MAX_NIGHT_RATE
+          + (MAX_NIGHT_RATE - night_rate * 2) * 'hff / MAX_NIGHT_RATE;
+        output_blue  <= night_rate * 255 / MAX_NIGHT_RATE
+          + (MAX_NIGHT_RATE - night_rate * 2) * 'hff / MAX_NIGHT_RATE;
+      end
     end else begin
       output_red   <= 0;
       output_green <= 0;
