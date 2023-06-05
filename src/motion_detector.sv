@@ -6,7 +6,7 @@ module motion_detector (
 );
   // https://wit-motion.yuque.com/wumwnr/ltst03/vl3tpy
   always_comb begin
-    ducking = direction < 8192;  // < 45°
+    ducking = direction < 10240;  // < 56.25°
     jumping = !ducking && acceleration >= -512;  // >= -0.25g
   end
 endmodule
