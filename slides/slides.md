@@ -58,7 +58,17 @@ flowchart LR
     sensor -- "起跳/下蹲" --> logic
 
     subgraph logic[游戏逻辑]
-        TODO
+        direction LR
+
+        游戏控制 --> 随机数生成器
+        游戏控制 -- "动作信号、碰撞检测、生命计数" --> 小恐龙
+        游戏控制 -- "计分" --> 计分器
+        游戏控制 -- "位置更新、碰撞检测" --> 游戏场景
+
+        游戏场景 --> 地面
+        游戏场景 --> 夜间元素
+        游戏场景 -- "队列更新" --> 云队列
+        游戏场景 -- "队列更新" --> 障碍队列
     end
 
     logic -- "元素坐标、昼夜切换" --> output
@@ -85,8 +95,234 @@ flowchart LR
 ```
 
 ---
+layout: center
+---
+# *现场展示*
 
-# 游戏逻辑 & 现场展示
+---
+
+# 游戏逻辑
+
+<span/>
+
+```mermaid
+flowchart
+
+游戏控制\nrunner --> 随机数生成器\nlfsr_prng
+游戏控制\nrunner -- "动作信号、碰撞检测、生命计数" --> 小恐龙\ntrex
+游戏控制\nrunner -- "计分" --> 计分器\ndistance_meter
+游戏控制\nrunner -- "位置更新、碰撞检测" --> 游戏场景\nhorizon
+
+游戏场景\nhorizon --> 地面\nhorizon_line
+游戏场景\nhorizon --> 夜间元素\nnight
+游戏场景\nhorizon -- "队列更新" --> 云队列\ncloud
+游戏场景\nhorizon -- "队列更新" --> 障碍队列\nobstacle
+
+```
+
+---
+clicks: 4
+---
+
+# 游戏逻辑
+
+## 跳跃/下蹲
+
+<v-clicks>
+
+- 实数的运算需要大量的时钟周期
+- 通过额外的进制计数器来模拟定点数运算
+- 通过状态机控制小恐龙运动状态
+- 跳跃力度不同，跳跃高度也不同
+
+</v-clicks>
+
+<v-click at="2">
+
+```mermaid
+flowchart LR
+
+未开始 -- "开始游戏" --> 跑动 -- "跳跃信号" --> 跳跃 -- "落地" --> 跑动
+
+跳跃 -- "下蹲信号" --> 快速下坠 -- "落地" --> 跑动
+
+跑动 -- "下蹲信号" --> 下蹲
+
+跑动 -- "碰撞" --> 扣除生命值 -- "生命值耗尽" --> 游戏结束
+
+跳跃 -- "碰撞" --> 扣除生命值
+
+下蹲 -- "碰撞" --> 扣除生命值
+
+```
+
+</v-click>
+
+---
+clicks: 4
+---
+
+# 游戏逻辑
+
+## 障碍生成
+
+<v-clicks>
+
+- 不能像软件代码一样拥有真正可变长的序列
+- 维护了一个数组模拟的循环队列来管理障碍物
+- 满足障碍生成条件时，从 7 种障碍物中随机生成并加入队列
+- 当障碍从视野中消失时，移出队列
+
+</v-clicks>
+
+
+<v-click at="1">
+
+![障碍队列](/obstacle_queue.png)
+
+</v-click>
+
+
+---
+
+# 游戏逻辑
+
+## 障碍生成
+
+<v-clicks>
+
+- 障碍物的间隔根据障碍物的类型、当前游戏速度随机生成
+- 问题：需要模运算，单周期内无法完成
+- 解决：利用流水线除法器 IP 核多周期运算
+- 通过状态机依次完成所有元素的更新
+
+</v-clicks>
+
+<v-click>
+
+```mermaid
+flowchart LR
+
+更新信号 --> 增加新云\n如果间隔足够 --> 等待除法器计算云间隔 --> 更新云队列\n移除不可见云 --> 增加新障碍\n如果间隔足够 --> 等待除法器计算障碍间隔 --> 更新障碍队列\n移除不可见障碍
+```
+
+</v-click>
+
+---
+clicks: 4
+---
+
+# 游戏逻辑
+
+## 碰撞检测
+
+<v-clicks>
+
+- 使用 AABB (Axis-Aligned Border Box) 可能造成误判
+- 检验像素是否重合时间开销过大
+- 拆分为多个子碰撞箱进行碰撞检测
+- 由于硬件天然的并行特性，可以同时检测多个碰撞箱而不带来额外性能开销
+
+</v-clicks>
+
+<div style="display: flex; align: center">
+    <img v-click="1" src="/aabb.png"/>
+    <img v-click="4" src="/collision_box.png"/>
+</div>
+
+---
+
+# 游戏逻辑
+
+## 统一交互接口
+
+<v-clicks>
+
+- 逻辑模块内部使用统一的接口进行信号更新、碰撞检测、速度更新等操作
+- 对显示模块提供统一的接口，输出元素坐标、元素材质、昼夜切换信号
+- 框架建成后，增加新功能非常敏捷
+
+</v-clicks>
+
+<v-click>
+
+```verilog
+output sprite_t     sprite     [RENDER_SLOTS],
+output pos_t        pos        [RENDER_SLOTS],
+output night_rate_t night_rate
+```
+
+</v-click>
+
+---
+layout: two-cols
+---
+
+# 游戏逻辑
+
+## 其他小细节
+
+
+<v-click>
+
+- 地面看起来是完整的，但其实是两块拼起来的
+    - 一块移出屏幕左侧之后就会瞬移到屏幕另一边
+    - 有两种地面 (平整/崎岖)，随机出现
+
+</v-click>
+<v-click>
+
+- 月亮有月相变化
+    - 每次新的夜晚到来的时候月亮都会变圆一些
+    - 直到满月之后再逐渐变瘦
+
+</v-click>
+<v-click>
+
+- 随机数种子除了由实验板上拨码开关设定，还取决于开始游戏的那次起跳的时间
+    - 每一局都不一样！
+
+</v-click>
+<v-click>
+
+- 各种想得到和想不到的坑
+
+</v-click>
+
+::right::
+
+<v-click>
+
+![Logic Bugs](/logic_bugs.png)
+
+</v-click>
+
+---
+layout: two-cols
+clicks: 5
+---
+
+# 运动检测
+
+<template v-slot:right>
+
+<v-click at="0">
+
+![Jump Detection Paper](/paper.png)
+
+</v-click>
+
+</template>
+
+<v-clicks>
+
+- 6 页的 paper，完整地介绍了用深度学习方法实现跳跃的检测
+- 我们有没有可能根据这篇论文，让这个了不起的发明在 FPGA 上重见天日？
+- 终于，在我们小组齐心协力、孜孜不倦、废寝忘食地研究了一个月后...
+- 我们放弃了，它太复杂了
+- 不过，我们努力用基本的牛顿力学原理重现了它的神韵...
+
+</v-clicks>
 
 ---
 
