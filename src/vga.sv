@@ -83,10 +83,15 @@ module vga #(
     data_enable <= ((output_x < HSIZE) & (output_y < VSIZE));
   end
 
+  logic [NIGHT_RATE_WIDTH-1:0] night_rate_buffer;
+
   // partition of RAM
   logic read_part = 0;
   always_ff @(posedge clk_vga) begin
-    if (read_y == VSIZE && read_x == 8) read_part <= ~read_part;
+    if (read_y == VSIZE && read_x == 8) begin
+      read_part <= ~read_part;
+      night_rate_buffer <= night_rate;
+    end
   end
   wire write_part;
   ram_cross_domain cross_domain_write_part (
@@ -160,13 +165,13 @@ module vga #(
 
   always_ff @(posedge clk_vga) begin
     if (output_x >= FRAME_LEFT && output_x < FRAME_RIGHT && output_y >= FRAME_TOP && output_y < FRAME_BOTTOM) begin
-      output_red   <= read_red[night_rate];
-      output_green <= read_green[night_rate];
-      output_blue  <= read_blue[night_rate];
+      output_red   <= read_red[night_rate_buffer];
+      output_green <= read_green[night_rate_buffer];
+      output_blue  <= read_blue[night_rate_buffer];
     end else if (output_x < HSIZE && output_y < VSIZE) begin
-      output_red   <= bg_red[night_rate];
-      output_green <= bg_green[night_rate];
-      output_blue  <= bg_blue[night_rate];
+      output_red   <= bg_red[night_rate_buffer];
+      output_green <= bg_green[night_rate_buffer];
+      output_blue  <= bg_blue[night_rate_buffer];
     end else begin
       output_red   <= 0;
       output_green <= 0;
