@@ -129,6 +129,9 @@ module vga #(
   wire [7:0] read_red  [0:MAX_NIGHT_RATE];
   wire [7:0] read_green[0:MAX_NIGHT_RATE];
   wire [7:0] read_blue [0:MAX_NIGHT_RATE];
+  wire [7:0] bg_red [0:MAX_NIGHT_RATE];
+  wire [7:0] bg_green [0:MAX_NIGHT_RATE];
+  wire [7:0] bg_blue [0:MAX_NIGHT_RATE];
 
   genvar i;
   generate
@@ -136,11 +139,21 @@ module vga #(
       palette #(
           .MAX_NIGHT_RATE(MAX_NIGHT_RATE),
           .NIGHT_RATE(i)
-      ) palette_inst (
+      ) palette_read (
           .palette_index(read_palette),
           .red(read_red[i]),
           .green(read_green[i]),
           .blue(read_blue[i])
+      );
+
+      palette #(
+          .MAX_NIGHT_RATE(MAX_NIGHT_RATE),
+          .NIGHT_RATE(i)
+      ) palette_bg (
+          .palette_index(7),
+          .red(bg_red[i]),
+          .green(bg_green[i]),
+          .blue(bg_blue[i])
       );
     end
   endgenerate
@@ -151,23 +164,9 @@ module vga #(
       output_green <= read_green[night_rate];
       output_blue  <= read_blue[night_rate];
     end else if (output_x < HSIZE && output_y < VSIZE) begin
-      if (night_rate == 0) begin
-        output_red   <= 255;
-        output_green <= 255;
-        output_blue  <= 255;
-      end else
-      if (night_rate == MAX_NIGHT_RATE) begin
-        output_red   <= 0;
-        output_green <= 0;
-        output_blue  <= 0;
-      end else begin
-        output_red   <= night_rate * 255 / MAX_NIGHT_RATE
-          + (MAX_NIGHT_RATE - night_rate * 2) * 'hff / MAX_NIGHT_RATE;
-        output_green <= night_rate * 255 / MAX_NIGHT_RATE
-          + (MAX_NIGHT_RATE - night_rate * 2) * 'hff / MAX_NIGHT_RATE;
-        output_blue  <= night_rate * 255 / MAX_NIGHT_RATE
-          + (MAX_NIGHT_RATE - night_rate * 2) * 'hff / MAX_NIGHT_RATE;
-      end
+      output_red   <= bg_red[night_rate];
+      output_green <= bg_green[night_rate];
+      output_blue  <= bg_blue[night_rate];
     end else begin
       output_red   <= 0;
       output_green <= 0;
