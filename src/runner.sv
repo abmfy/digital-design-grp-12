@@ -189,8 +189,8 @@ module runner (
     input clk,
     input rst,   
 
-    // Slow mode.
-    input slow,
+    // Sensor mode.
+    input sensor_mode,
 
     input jumping,
     input ducking,
@@ -213,6 +213,9 @@ module runner (
     import horizon_pkg::MAX_OBSTACLES;
 
     state_t state, next_state;
+
+    // Always use normal mode.
+    logic slow = 0;
 
     logic update;
 
@@ -443,7 +446,7 @@ module runner (
     always_ff @(posedge clk) begin
         if (rst) begin
             state <= WAITING;
-            life <= LIFES;
+            life <= 0;
             update <= 0;
             start <= 0;
             restart <= 0;
@@ -517,7 +520,7 @@ module runner (
     endtask
 
     task reset;
-        life <= LIFES;
+        life <= 0;
         start <= 0;
         speed <= 0;
         clear_timer <= 0;
@@ -528,6 +531,8 @@ module runner (
     endtask
 
     task init;
+        // Only one life if button mode.
+        life <= sensor_mode ? LIFES : 1;
         start <= 1;
         speed <= slow ? SLOW_SPEED : SPEED;
     endtask
@@ -746,7 +751,7 @@ module runner (
             end
 
             // Life. Note that this uses sprite coords directly without scaling
-            if (life > 5) begin
+            if (sensor_mode && life > 5) begin
                 sprite[RENDER_INDEX[LIFE]] <= '{
                     SPRITE[LIFE][0],
                     SPRITE[LIFE][1],
@@ -779,7 +784,7 @@ module runner (
                     LIFE_NUM_X,
                     LIFE_NUM_Y
                 };
-            end else begin
+            end else if (sensor_mode) begin
                 // Show life icons directly when life <= 5
                 for (int i = 0; i < 5; i++) begin
                     if (life > i) begin

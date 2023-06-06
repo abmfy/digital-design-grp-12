@@ -237,7 +237,7 @@ module mod_top (
       .clk(clk_33m),
       .rst(reset_33m),
 
-      .slow(sensor_mode),
+      .sensor_mode,
 
       .jumping(jump_buffer),
       .ducking(duck_buffer),
