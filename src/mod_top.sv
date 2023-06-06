@@ -222,7 +222,7 @@ module mod_top (
   );
 
   logic sensor_mode;
-  assign sensor_mode = dip_sw[15];
+  always_ff @(posedge clk_33m) sensor_mode <= dip_sw[15];
 
   bit [10:0] rng_data;
 
