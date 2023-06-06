@@ -16,7 +16,8 @@ h2 {
 }
 </style>
 
-<!-- Neta 健身环大冒险 -->
+<img src="/dino-adv.png" class="absolute w-60 right-24 bottom-88">
+
 # 数设项目展示：<ruby>小恐龙大冒险<rt><del>Ring</del> Dino Fit Adventure</rt>！</ruby>
 
 游宇凡 @ouuan · 王博文 @abmfy · 2023.6.6
