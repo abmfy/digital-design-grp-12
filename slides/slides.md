@@ -377,3 +377,25 @@ image: /sensor.jpg
 -   修复 buffer / RAM 等导致的时钟周期偏移
 
 </v-click>
+
+---
+layout: center
+---
+
+# Thanks
+
+-   感谢老师、助教们的悉心指导
+-   感谢所有一同奋斗过的同学们
+-   感谢数设教学团队提供的实验平台及文档
+
+<v-click>
+
+-   感谢 Alex Forencich 编写的 Verilog LFSR 随机数生成器
+-   感谢 tinyvga.com、fpga4fun.com 等网站提供的参考资料
+-   感谢 Chromium 开发出小恐龙游戏并开放源码以供参考
+-   感谢 Quartus 以及它的 PLL、RAM、ROM、除法器等 ip，~~但是不感谢 ModelSim~~
+-   感谢 Vivado 提供的仿真支持
+-   感谢 TUNA 群友（也就是杰哥）劝我选数设
+-   感谢 GIMP 让我能够编辑出小恐龙大冒险的图标
+
+</v-click>
