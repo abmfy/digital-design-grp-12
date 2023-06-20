@@ -36,13 +36,14 @@ module async_receiver (
     else bit_counter <= bit_counter + 1;
   end
   wire next_bit;
-  assign next_bit = (bit_counter == OVERSAMPLE_RATE - 1);
+  assign next_bit = (bit_counter == OVERSAMPLE_RATE / 2 - 1);
 
   always @(posedge clk_uart) begin
     if (rst) state <= 0;
     else begin
       case (state)
-        4'b0000: if (~rx_filtered) state <= 4'b1000;
+        4'b0000: if (~rx_filtered) state <= 4'b0001;
+        4'b0001: if (next_bit) state <= 4'b1000;
         4'b1000: if (next_bit) state <= 4'b1001;
         4'b1001: if (next_bit) state <= 4'b1010;
         4'b1010: if (next_bit) state <= 4'b1011;
@@ -50,14 +51,14 @@ module async_receiver (
         4'b1100: if (next_bit) state <= 4'b1101;
         4'b1101: if (next_bit) state <= 4'b1110;
         4'b1110: if (next_bit) state <= 4'b1111;
-        4'b1111: if (next_bit) state <= 4'b0001;
-        4'b0001: if (next_bit) state <= 4'b0000;
+        4'b1111: if (next_bit) state <= 4'b0010;
+        4'b0010: if (next_bit) state <= 4'b0000;
         default: state <= 4'b0000;
       endcase
     end
   end
 
-  assign next_byte = (next_bit && state == 4'b0001);
+  assign next_byte = (next_bit && state == 4'b0010);
 
   always @(posedge clk_uart) begin
     if (rst) data <= 0;
