@@ -8,13 +8,13 @@ module paint_element #(
     FRAME_HEIGHT = 300
 ) (
     input clk_33m,
-    input rst, // start painting
+    input rst,  // start painting
     // left top coordinate on sprite
     input [COOR_WIDTH-1:0] sprite_x,
     input [COOR_WIDTH-1:0] sprite_y,
     // left top coordinate on frame
-    input signed[COOR_WIDTH-1:0] frame_x,
-    input signed[COOR_WIDTH-1:0] frame_y,
+    input signed [COOR_WIDTH-1:0] frame_x,
+    input signed [COOR_WIDTH-1:0] frame_y,
     // size of the element
     input [COOR_WIDTH-1:0] width,
     input [COOR_WIDTH-1:0] height,
@@ -28,6 +28,7 @@ module paint_element #(
 
   logic [COOR_WIDTH-1:0] x;
   logic [COOR_WIDTH-1:0] y;
+  // ring buffer
   logic [COOR_WIDTH-1:0] last_x[1:0];
   logic [COOR_WIDTH-1:0] last_y[1:0];
 
@@ -74,6 +75,7 @@ module paint_element #(
     write_y = 0;
     write_palette = 0;
     if (!finished) begin
+      // if inside frame
       if (frame_x + $signed(last_x[1]) >= 0 &&
           frame_x + $signed(last_x[1]) < FRAME_WIDTH &&
           frame_y + $signed(last_y[1]) >= 0 &&

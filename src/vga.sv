@@ -50,6 +50,7 @@ module vga #(
   assign output_x = buffer_x[BUFFER_WIDTH-1];
   assign output_y = buffer_y[BUFFER_WIDTH-1];
 
+  // iterate coordinates & store in the ring buffer
   always_ff @(posedge clk_vga) begin
     if (buffer_x[0] == HMAX - 1) begin
       buffer_x[0] <= 0;
@@ -163,6 +164,7 @@ module vga #(
     end
   endgenerate
 
+  // color outputs
   always_ff @(posedge clk_vga) begin
     if (output_x >= FRAME_LEFT && output_x < FRAME_RIGHT && output_y >= FRAME_TOP && output_y < FRAME_BOTTOM) begin
       output_red   <= read_red[night_rate_buffer];

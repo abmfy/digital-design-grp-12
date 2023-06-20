@@ -24,7 +24,7 @@ module painter #(
     // paint background
 
     logic background_rst;
-    logic background_wait;
+    logic background_wait; // wait for resetting
     wire[COOR_WIDTH-1:0] background_x;
     wire[COOR_WIDTH-1:0] background_y;
     wire[2:0] background_palette;
@@ -44,7 +44,7 @@ module painter #(
     // paint element
 
     logic element_rst;
-    logic element_wait;
+    logic element_wait; // wait for resetting
     logic[COOR_WIDTH-1:0] sprite_x;
     logic[COOR_WIDTH-1:0] sprite_y;
     logic signed[COOR_WIDTH-1:0] frame_x;

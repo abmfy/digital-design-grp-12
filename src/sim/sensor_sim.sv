@@ -52,17 +52,17 @@ module sensor_sim;
     #10000;
     rst = 0;
 
-    send_message(8'h51, {16'h0123, 16'h4567, 16'h89ab, 16'hcdef});
+    send_message(8'h51, {16'h0123, 16'h4567, 16'h89ab, 16'hcdef});  // acceleration 0123
     #233333;
-    send_message(8'h52, {16'h0123, 16'h4567, 16'h89ab, 16'hcdef});
+    send_message(8'h52, {16'h0123, 16'h4567, 16'h89ab, 16'hcdef});  // incorrect type
     send_byte(8'h76);  // noise
-    send_message(8'h53, {16'h0123, 16'h4567, 16'h89ab, 16'hcdef});
-    send_message(8'h54, {16'h0123, 16'h4567, 16'h89ab, 16'hcdef});
+    send_message(8'h53, {16'h0123, 16'h4567, 16'h89ab, 16'hcdef});  // direction 4567
+    send_message(8'h54, {16'h0123, 16'h4567, 16'h89ab, 16'hcdef});  // incorrect type
     #345678;
-    send_message(8'h53, {16'hfedc, 16'hba98, 16'h7654, 16'h3210});
+    send_message(8'h53, {16'hfedc, 16'hba98, 16'h7654, 16'h3210});  // direction ba98
     send_byte(8'h13);  // noise
-    send_message(8'h52, {16'hfedc, 16'hba98, 16'h7654, 16'h3210});
+    send_message(8'h52, {16'hfedc, 16'hba98, 16'h7654, 16'h3210});  // incorrect type
     #98765;
-    send_message(8'h51, {16'hfedc, 16'hba98, 16'h7654, 16'h3210});
+    send_message(8'h51, {16'hfedc, 16'hba98, 16'h7654, 16'h3210});  // acceleration fedc
   end
 endmodule

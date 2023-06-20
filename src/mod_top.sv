@@ -85,6 +85,9 @@ module mod_top (
     output wireless_rx,
     output wireless_set
 );
+
+  // ------------ get clocks ------------
+
   wire clk_vga;
   pll_vga pll_vga_inst (
       .inclk0(clk_100m),
@@ -117,6 +120,8 @@ module mod_top (
       .reset_btn,
       .rst_out(reset_uart)
   );
+
+  // -------- get motion signals --------
 
   wire [15:0] acceleration;
   wire [15:0] direction;
@@ -161,6 +166,8 @@ module mod_top (
       .q(ducking_33m)
   );
 
+  // ----------- paint & vga -----------
+
   wire [11:0] write_x;
   wire [11:0] write_y;
   wire [2:0] write_palette;
@@ -172,15 +179,15 @@ module mod_top (
 
   genvar i;
   generate
-    for (i = 0; i < 6; i++) begin: gen_night_rate
+    for (i = 0; i < 6; i++) begin : gen_night_rate
       ram_cross_domain cross_domain_night_rate (
-        .wrclock(clk_33m),
-        .wraddress(0),
-        .data(night_rate[i]),
-        .wren(1),
-        .rdclock(clk_vga),
-        .rdaddress(0),
-        .q(night_rate_vga[i])
+          .wrclock(clk_33m),
+          .wraddress(0),
+          .data(night_rate[i]),
+          .wren(1),
+          .rdclock(clk_vga),
+          .rdaddress(0),
+          .q(night_rate_vga[i])
       );
     end
   endgenerate
@@ -221,6 +228,8 @@ module mod_top (
       .finished(painter_finished)
   );
 
+  // ------------ game logic ------------
+
   logic sensor_mode;
   always_ff @(posedge clk_33m) sensor_mode <= dip_sw[15];
 
@@ -248,9 +257,11 @@ module mod_top (
 
       .sprite,
       .pos,
-      
+
       .night_rate
   );
+
+  // -------------- debug --------------
 
   dpy_scan dpy_scan_inst (
       .clk(clk_33m),
