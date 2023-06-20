@@ -78,7 +78,7 @@
             & \texttt{mod_top.sv} & 顶层模块 & 游宇凡、王博文、助教 \\ \cline{2-4}
             & \texttt{motion_detector.sv} & 由传感器数据判断运动状态 & 游宇凡 \\ \cline{2-4}
             & \texttt{obstacle.sv} &  & 王博文 \\ \cline{2-4}
-            & \texttt{painter.sv} & 逐个绘制背景和画面元素 & 游宇凡 \\ \cline{2-4}
+            & \texttt{painter.sv} & 逐个绘制背景和画面元素 & 游宇凡、王博文 \\ \cline{2-4}
             & \texttt{paint_background.sv} & 绘制画面空白背景 & 游宇凡 \\ \cline{2-4}
             & \texttt{paint_element.sv} & 基于 sprite 图绘制单个画面元素 & 游宇凡 \\ \cline{2-4}
             & \texttt{palette.sv} & 由颜色编号以及昼夜转换获取 RGB 值 & 游宇凡 \\ \cline{2-4}
@@ -116,15 +116,62 @@
 
 \subsection{传感器模块}
 
-\subsubsection{外设}
+\subsubsection{外设组装}
 
-采用一个 JY901S 运动姿态传感器测量玩家的运动数据，以及一对 HC-12 无线模块来向实验板传输数据，波特率设为 \SI{57600}{bps}。元件之间直接焊接相连，固定在面包板上，由充电宝和 USB 转 TTL 模块进行供电，整体粘在为 Switch 健身环设计的绑腿上。
+采用一个维特智能九轴加速度计陀螺仪磁场姿态角度传感器模块 JY901S 测量玩家的运动数据，以及一对 HC-12 无线模块来向实验板传输数据。
 
-\subsubsection{代码}
+在组装外设之前，先使用 USB 转 TTL 模块依次将传感器和两个无线模块连接到电脑上，并使用配套的软件将它们的波特率都设为 \SI{57600}{bps}。各个模块的波特率默认均为 \SI{9600}{bps}，调高波特率可以允许更高的数据测量频率，进而提升运动状态检测的准确性。
 
-参考 \href{https://www.fpga4fun.com/SerialInterface.html}{fpga4fun - Serial interface} 编写了 UART 数据接收，参考 \href{https://wit-motion.yuque.com/wumwnr/ltst03/vl3tpy}{WIT 私有协议} 使用状态机逐字节接受数据并解析。
+将天线焊接在无线模块上，传感器一侧的各个元件之间直接焊接相连（TX 与 RX 相连），固定在面包板上，由充电宝和 USB 转 TTL 模块进行供电，整体放在为 Switch 健身环设计的绑腿中，如\cref{sensor} 所示。
 
-采用简单的阈值判断来检测玩家起跳/下蹲的动作：与水平方向夹角小于 \SI{56.25}{\degree} 则判断为下蹲，竖直方向加速度达到向下 $0.75g$（这里是转换为了实际运动的加速度，原始测量值则是大于 $-0.25g$）则判断为起跳。
+因为无线模块的 VCC、GND 引脚以及 Pmod 接口的供电引脚刚好都位于最外侧，实验板一侧的无线模块直接插在 Pmod 1 接口上的 $2 \sim 6$ 引脚。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/sensor.jpg}
+    \caption{外设实拍图}
+    \label{sensor}
+\end{figure}
+
+\subsubsection{UART 数据接收}
+
+参考 \href{https://www.fpga4fun.com/SerialInterface.html}{fpga4fun - Serial interface} 编写了 UART 数据接收。在 UART 协议中，以预先设定的波特率为频率传输 bit，而以 byte 为单位传输数据。传输每个 byte 时，先以 0 表示开始，然后由小端序的 8 个 bit 表示数据，之后保持 1 直到下一个 bit，如\cref{uart} 所示。具体接收流程为：
+
+\begin{enumerate}
+    \item 使用 PLL 提供频率为波特率 8 倍的时钟来进行过采样
+    \item 将从 RX 接收到的信号同步到时钟，并消除毛刺信号
+    \item 使用状态机依次完成一个 byte 传输过程中的每一步：
+        \begin{enumerate}
+            \item 开始接收后，使用一个 $0 \sim 7$ 的计数器，每数到 3（此时大约是一个 bit 的中点）读取下一个 bit
+            \item 在接收到 0 时开始整个接收过程，即状态机变为开始接收的状态，计数器置 0
+            \item 在过程中，使用一个移位寄存器来读取这个 byte
+            \item 读完 8 个 bit 后，用一个 bit 的时间输出表示 byte 读取完毕的信号（即只有这个信号为 1 时，UART 读取模块对外输出的 byte 值才是有效的），然后回到等待开始的状态
+        \end{enumerate}
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/uart.png}
+    \vspace{-16pt}
+    \caption{UART 协议示意图（来自 \url{https://www.fpga4fun.com/SerialInterface1.html}）}
+    \label{uart}
+\end{figure}
+
+\subsubsection{传感器数据解析}
+
+参考 \href{https://wit-motion.yuque.com/wumwnr/ltst03/vl3tpy}{WIT 私有协议} 使用状态机逐字节接受数据并解析：
+
+\begin{enumerate}
+    \item 接收到协议头 \texttt{0x55} 后开始整个读取过程
+    \item 读取包括协议头在内的前 10 个 byte 时，将每个 byte 加在一起计算 sumcrc
+    \item 第 2 个 byte 表示消息类型，读取时记录下来
+    \item 后面 8 个 byte 每两个 byte 表示一个数据的低位和高位，根据消息类型，读到需要的数据时记录下来
+    \item 第 11 个 byte 是 sumcrc，若读取到的 sumcrc 和计算得到的相同这次读取才有效，根据消息类型，使用记录下的数据更新模块对外的输出
+\end{enumerate}
+
+\subsubsection{动作判断}
+
+采用简单的阈值判断来检测玩家起跳/下蹲的动作：与水平方向夹角小于 \SI{56.25}{\degree} 则判断为下蹲，竖直方向含 $g$ 的加速度大于 $-0.25 g$（向下为正，静止时理论上是 $-1g$）则判断为起跳。
 
 \subsection{画面输出模块}
 
@@ -132,29 +179,54 @@
 
 \subsubsection{显存 \& VGA 输出}
 
-采用双显存机制，将片内 RAM 的一半用于写入，一半用于读取，每帧对两块显存进行交换。通过 ring buffer 修复读取缓存产生的延时导致的像素偏移。显存采用 \SI{33.33}{\mega\hertz} 的写入时钟和 VGA 所需的 \SI{83.46}{\mega\hertz} 读取时钟。VGA 模块提供一个画面刷新信号输出，用来告诉游戏逻辑模块需要更新画面。VGA 模块还接受黑夜程度作为输入以实现昼夜转换，为了支持渐变还需要得到过程中的颜色值，如果直接进行乘法运算会有较大的延时，难以在 VGA 的高频时钟下完成计算，所以实际采用的方案是在编译时就计算出所有可能的颜色值（具体实现为使用 $0 \sim 255$ 作为 \texttt{parameter} 分别进行实例化），根据黑夜程度进行选择。
+采用双显存机制，将片内 RAM 的一半用于写入，一半用于读取，每帧对两块显存进行交换。通过 ring buffer 修复读取缓存产生的延时导致的像素偏移。显存采用 \SI{33.33}{\mega\hertz} 的写入时钟和 VGA 所需的 \SI{83.46}{\mega\hertz} 读取时钟。VGA 模块提供一个画面刷新信号输出，用来告诉游戏逻辑模块需要更新画面。
+
+VGA 模块还接受黑夜程度作为输入以实现昼夜转换，为了支持渐变还需要得到过程中的颜色值，如果直接进行乘法运算会有较大的延时，难以在 VGA 的高频时钟下完成计算，所以实际采用的方案是在编译时就计算出所有可能的颜色值（具体实现为使用 $0 \sim 63$ 作为 \texttt{parameter} 分别进行实例化），根据黑夜程度进行选择。
 
 \subsubsection{sprite 图编辑}
 
 原版 sprite 共有 17 种颜色，通过 GIMP 压缩至只有 8 种颜色，使得 ROM 和显存中每个像素只占据 3 个 bit，并且裁剪掉未使用的部分，从而可以放进 FPGA 的内置存储资源（共使用 $2442 \times 130 \times 3 + 2 \times 1280 \times 300 \times 3 \approx \SI{3.26}{\mega b}$ 存储资源）。
 
-除了压缩，还添加了若干元素，包括生命值的图标，以及数字的浅色版本（原版中通过调整透明度实现了对数字深浅的控制）。
+除了压缩，还添加了若干元素，包括生命值的图标，以及数字的浅色版本（用于最高分的显示，原版 sprite 中没有浅色的数字，而是通过调整透明度实现的浅色）。
 
 \subsubsection{元素绘制}
 
-sprite 图转为 MIF 文件存在片内 ROM 中。元素绘制模块接受 sprite 坐标、画面绘制坐标、元素宽高作为参数，从 ROM 中读取每个像素，通过状态机依次绘制空白背景和每个元素，绘制每个元素时通过状态机枚举坐标进行绘制。
+sprite 图转为 MIF 文件存在片内 ROM 中。元素绘制模块接受 sprite 坐标、画面绘制坐标、元素宽高作为参数，通过状态机依次绘制空白背景和每个元素，绘制每个元素时通过状态机枚举坐标进行绘制，从 ROM 中读取每个像素，通过 ring buffer 修复因读取 ROM 产生的偏移。
 
 \subsection{游戏逻辑模块}
 
 \section{仿真结果}
+
+由于 ModelSim 不太好用，我们采用 Vivado 进行仿真。
+
+\subsection{传感器数据读取}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/uart-sim-begin.png}
+    \vspace{-16pt}
+    \caption{\texttt{async_receiver_sim} 仿真结果开头}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/uart-sim-end.png}
+    \vspace{-16pt}
+    \caption{\texttt{async_receiver_sim} 仿真结果结尾}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/sensor-sim.png}
+    \vspace{-16pt}
+    \caption{\texttt{sensor_sim} 仿真结果}
+\end{figure}
 
 \section{实验演示说明}
 
 \subsection{实验板输入}
 
 两个带去抖按键中，左边的是复位，右边的是跳跃以及开始/重启游戏。四个普通按键中位于右下的是下蹲。16 位拨码开关中最右边的用于控制输入方式，ON 是按键输入，OFF 是传感器输入。
-
-实验板一侧的无线模块直接插在 Pmod 1 的 $2 \sim 6$ 引脚，方向由 VCC 和 GND 确定。
 
 \subsection{传感器使用}
 
@@ -175,6 +247,12 @@ sprite 图转为 MIF 文件存在片内 ROM 中。元素绘制模块接受 sprit
 连到实验板上时还遇到了一个小问题：Pmod 接口的引脚编号和 IO 引脚的序号是不同的，1、2、3、4、7、8、9、10 号引脚分别是 IO0 $\sim$ IO7，一开始没看清导致引脚绑定偏了一位。
 
 这时，外设整体的连接依然不是很稳定，跳几下之后就很容易断开连接，用手稍微按压一下线又会恢复工作。尝试过用透明胶对整体进行固定，有一定的效果，但仍不理想，而且过了几天后可能反而会整体全部松动，需要将胶带拆开才能调整修复。最后改成了所有连线都焊上，连接就非常稳定了。
+
+\subsection{外设数据接收遇到的问题}
+
+一开始是按照 \url{https://www.fpga4fun.com/SerialInterface4.html} 的写法，实现了一个分频，代码会复杂一些，后来才意识到可以通过 PLL 直接生成需要的频率来简化代码并提高准确性。
+
+一开始由于没有理解过采样的作用，而且 fpga4fun 网页上的代码状态机少了一个状态（下载下来的完整代码是正确的），读取每个 bit 的时机（即 \texttt{next_bit} 信号）没有选在 bit 的中点而是选在了边缘，这个错误影响不是很大，但也导致它很难被发现。
 
 \subsection{传感器跳跃检测遇到的问题}
 
@@ -213,6 +291,6 @@ sprite 图转为 MIF 文件存在片内 ROM 中。元素绘制模块接受 sprit
 
 在信号跨时钟域时如果不处理好也会出现时序问题，最简单且可靠的处理方式是使用一个写入时钟和读取时钟不同的只存 1 bit 数据的 RAM IP 核。
 
-除了降低时钟频率，也需要避免使用组合逻辑进行输出，可以加一个 buffer。
+除了降低时钟频率，也需要避免使用组合逻辑进行输出，对每个输出信号加上 buffer 即可。
 
 \end{document}
